@@ -12,100 +12,99 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración EJS y pública
+// Configuración de EJS y carpeta pública
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Sesiones para usuarios y dark mode
+// Configuración de sesión
 app.use(session({
-  secret: "secret_key_qr_app",
+  secret: 'qr-secret-key',
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: true
 }));
 
-// Base de datos temporal de usuarios
-let users = {}; // { username: { password, darkMode } }
-
+// Lista temporal de usuarios
+let users = [];
 // Lista temporal de QRs
 let qrList = [];
 
-// Middleware para verificar login
+// Middleware para verificar sesión
 function requireLogin(req, res, next) {
   if (!req.session.user) return res.redirect("/login");
   next();
 }
 
-// Middleware para dark mode
-app.use((req, res, next) => {
-  res.locals.darkMode = req.session.darkMode || false;
-  next();
+// ------------------- LOGIN / REGISTER -------------------
+
+// Mostrar login
+app.get("/login", (req, res) => {
+  res.render("login", { darkMode: req.session.darkMode || false, user: req.session.user });
 });
 
-// --------------------- RUTAS USUARIOS ---------------------
-
-// Página registro
-app.get("/register", (req, res) => res.render("register"));
-
-// Registrar usuario
-app.post("/register", (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) return res.redirect("/register");
-  if (users[username]) return res.send("Usuario ya existe");
-
-  users[username] = { password, darkMode: false };
-  req.session.user = username;
-  res.redirect("/");
-});
-
-// Página login
-app.get("/login", (req, res) => res.render("login"));
-
-// Login
+// Procesar login
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-  const user = users[username];
-  if (!user || user.password !== password) return res.send("Usuario o contraseña incorrecta");
-
-  req.session.user = username;
-  req.session.darkMode = user.darkMode;
-  res.redirect("/");
+  const user = users.find(u => u.username === username && u.password === password);
+  if (user) {
+    req.session.user = user;
+    req.session.darkMode = user.darkMode || false;
+    res.redirect("/");
+  } else {
+    res.send("Usuario o contraseña incorrectos");
+  }
 });
 
-// Logout
-app.post("/logout", (req, res) => {
-  req.session.destroy();
+// Mostrar registro
+app.get("/register", (req, res) => {
+  res.render("register");
+});
+
+// Procesar registro
+app.post("/register", (req, res) => {
+  const { username, password } = req.body;
+  if (users.find(u => u.username === username)) return res.send("Usuario ya existe");
+  users.push({ username, password, darkMode: false });
   res.redirect("/login");
 });
 
-// Página cambiar contraseña
-app.get("/change-password", requireLogin, (req, res) => res.render("change-password"));
-
 // Cambiar contraseña
+app.get("/change-password", requireLogin, (req, res) => {
+  res.render("change-password", { darkMode: req.session.darkMode });
+});
+
 app.post("/change-password", requireLogin, (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  const user = users[req.session.user];
-  if (user.password !== oldPassword) return res.send("Contraseña antigua incorrecta");
-
-  user.password = newPassword;
-  res.send("Contraseña cambiada correctamente");
+  if (req.session.user.password !== oldPassword) return res.send("Contraseña actual incorrecta");
+  req.session.user.password = newPassword;
+  res.send("Contraseña actualizada correctamente. <a href='/'>Volver</a>");
 });
 
 // Toggle dark mode
 app.post("/toggle-dark", requireLogin, (req, res) => {
-  const user = users[req.session.user];
-  user.darkMode = !user.darkMode;
-  req.session.darkMode = user.darkMode;
-  res.redirect("/");
+  req.session.darkMode = !req.session.darkMode;
+  req.session.user.darkMode = req.session.darkMode;
+  res.redirect("back");
 });
 
-// --------------------- RUTAS QR ---------------------
+// Eliminar cuenta
+app.post("/delete-account", requireLogin, (req, res) => {
+  users = users.filter(u => u.username !== req.session.user.username);
+  req.session.destroy(err => {
+    if (err) return res.status(500).send("Error al eliminar cuenta");
+    res.redirect("/register");
+  });
+});
 
+// ------------------- QR -------------------
+
+// Página principal
 app.get("/", requireLogin, (req, res) => {
-  res.render("index", { qrList, user: req.session.user });
+  res.render("index", { qrList, darkMode: req.session.darkMode });
 });
 
+// Crear un nuevo QR
 app.post("/generate", requireLogin, async (req, res) => {
   try {
     const originalUrl = req.body.url;
@@ -114,12 +113,16 @@ app.post("/generate", requireLogin, async (req, res) => {
     const id = Date.now().toString();
     const internalUrl = `${req.protocol}://${req.get("host")}/qr/${id}`;
 
+    // Acortar la URL interna usando is.gd
     let shortInternalUrl;
     try {
-      const resFetch = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(internalUrl)}`);
+      const resFetch = await fetch(
+        `https://is.gd/create.php?format=simple&url=${encodeURIComponent(internalUrl)}`
+      );
       shortInternalUrl = await resFetch.text();
       if (!shortInternalUrl.startsWith("http")) shortInternalUrl = internalUrl;
-    } catch {
+    } catch (err) {
+      console.error("Error acortando URL, se usará la URL interna", err);
       shortInternalUrl = internalUrl;
     }
 
@@ -136,14 +139,17 @@ app.post("/generate", requireLogin, async (req, res) => {
     });
 
     res.redirect("/");
-  } catch {
+  } catch (err) {
+    console.error("❌ Error generando QR:", err);
     res.status(500).send("Error generando QR");
   }
 });
 
+// Actualizar solo la URL de destino (QR no cambia)
 app.post("/update/:id", requireLogin, (req, res) => {
   const { id } = req.params;
   const { newUrl } = req.body;
+
   const qrItem = qrList.find(q => q.id === id);
   if (!qrItem) return res.status(404).send("QR no encontrado");
 
@@ -151,11 +157,13 @@ app.post("/update/:id", requireLogin, (req, res) => {
   res.redirect("/");
 });
 
+// Eliminar QR
 app.post("/delete/:id", requireLogin, (req, res) => {
   qrList = qrList.filter(q => q.id !== req.params.id);
   res.redirect("/");
 });
 
+// Redirección al escanear el QR
 app.get("/qr/:id", (req, res) => {
   const qrItem = qrList.find(q => q.id === req.params.id);
   if (!qrItem) return res.status(404).send("QR no encontrado");

@@ -2,18 +2,31 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - QR Server</title>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body class="<%= darkMode ? 'dark-mode' : '' %>">
 <div class="container">
-<h1>Login</h1>
-<form action="/login" method="post">
-  <input type="text" name="username" placeholder="Usuario" required>
-  <input type="password" name="password" placeholder="Contraseña" required>
-  <button type="submit">Entrar</button>
-</form>
-<p>¿No tienes cuenta? <a href="/register">Registrarse</a></p>
+  <h1>Iniciar Sesión</h1>
+  <form action="/login" method="post">
+    <input type="text" name="username" placeholder="Usuario" required>
+    <input type="password" name="password" placeholder="Contraseña" required>
+    <button type="submit">Entrar</button>
+  </form>
+
+  <div class="login-options">
+    <p>¿No tienes cuenta? <a href="/register">Regístrate</a></p>
+    <% if (user) { %>
+    <form action="/delete-account" method="post" onsubmit="return confirm('¿Estás seguro de eliminar tu cuenta?');">
+      <button type="submit" class="btn-delete">Eliminar Cuenta</button>
+    </form>
+    <% } %>
+  </div>
+
+  <form action="/toggle-dark" method="post">
+    <button type="submit" class="btn-toggle">Modo Oscuro</button>
+  </form>
 </div>
 </body>
 </html>
