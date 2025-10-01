@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Generator Pro</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f6f8; margin:0; padding:0;}
+    .container { max-width: 900px; margin: 40px auto; background:#fff; padding:30px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.1);}
+    h1 { text-align:center; color:#2c3e50; margin-bottom:20px; }
+    form input[type=url] { width:70%; padding:10px; border-radius:6px; border:1px solid #ccc; }
+    form button { padding:10px 20px; border:none; border-radius:6px; background:#3498db; color:#fff; cursor:pointer; }
+    form button:hover { background:#2980b9; }
+    .qr-list { margin-top:30px; display:flex; flex-direction:column; gap:20px; }
+    .qr-card { display:flex; gap:20px; align-items:center; padding:15px; background:#f9f9f9; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.05);}
+    .qr-card img { width:140px; height:140px; border-radius:6px; background:#fff; padding:10px; border:1px solid #ddd; }
+    .qr-info { flex:1; }
+    .qr-info p { margin:5px 0; word-break:break-all; }
+    .qr-info a { color:#3498db; text-decoration:none; }
+    .qr-info a:hover { text-decoration:underline; }
+    .update-form { margin-top:10px; display:flex; gap:10px; }
+    .update-form input { flex:1; padding:6px; border-radius:5px; border:1px solid #bbb; }
+    .update-form button { background:#27ae60; color:#fff; border:none; padding:6px 12px; border-radius:5px; cursor:pointer; }
+    .update-form button:hover { background:#1e8449; }
+    .delete-form button { background:#e74c3c; color:#fff; border:none; padding:6px 12px; border-radius:5px; cursor:pointer; }
+    .delete-form button:hover { background:#c0392b; }
+    .empty { text-align:center; font-style:italic; color:#666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📱 Generador de Códigos QR Profesional</h1>
+
+    <form action="/generate" method="POST">
+      <input type="url" name="url" placeholder="Introduce la URL" required />
+      <button type="submit">Generar QR</button>
+    </form>
+
+    <div class="qr-list">
+      <% if (qrList.length === 0) { %>
+        <p class="empty">Aún no has generado ningún QR.</p>
+      <% } %>
+
+      <% qrList.forEach(qr => { %>
+        <div class="qr-card">
+          <img src="<%= qr.qrDataUrl %>" alt="QR Code" />
+          <div class="qr-info">
+            <p><strong>Original:</strong> <a href="<%= qr.originalUrl %>" target="_blank"><%= qr.originalUrl %></a></p>
+            <p><strong>QR corto:</strong> <a href="<%= qr.shortInternalUrl %>" target="_blank"><%= qr.shortInternalUrl %></a></p>
+            <p><strong>Escaneos:</strong> <%= qr.scans %></p>
+            <p><strong>Último escaneo:</strong> <%= qr.lastScan || "Nunca" %></p>
+
+            <form action="/update/<%= qr.id %>" method="POST" class="update-form">
+              <input type="url" name="newUrl" placeholder="Nueva URL" required />
+              <button type="submit">Actualizar</button>
+            </form>
+
+            <form action="/delete/<%= qr.id %>" method="POST" class="delete-form">
+              <button type="submit">Eliminar</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</body>
+</html>
