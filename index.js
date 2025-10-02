@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 import qrcode from "qrcode";
 import fetch from "node-fetch";
 import mongoose from "mongoose";
@@ -49,6 +50,7 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 // JWT middleware
 const authenticate = async (req, res, next) => {
@@ -83,7 +85,7 @@ app.post("/register", async (req, res) => {
   await user.save();
 
   const token = jwt.sign({ id: user._id }, process.env.SESSION_SECRET, { expiresIn: "7d" });
-  res.cookie("token", token, { httpOnly: true });
+  res.cookie("token", token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
   res.redirect("/");
 });
 
@@ -100,7 +102,7 @@ app.post("/login", async (req, res) => {
   await user.save();
 
   const token = jwt.sign({ id: user._id }, process.env.SESSION_SECRET, { expiresIn: "7d" });
-  res.cookie("token", token, { httpOnly: true });
+  res.cookie("token", token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
   res.redirect("/");
 });
 
