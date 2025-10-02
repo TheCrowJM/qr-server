@@ -4,137 +4,37 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Iniciar sesión</title>
-  <link rel="stylesheet" href="/style.css" />
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f5f6fa;
-      margin: 0;
-      padding: 0;
-      transition: background 0.3s, color 0.3s;
-    }
-
-    body.dark {
-      background: #1e1e2f;
-      color: #e0e0e0;
-    }
-
-    .login-container {
-      max-width: 400px;
-      margin: 80px auto;
-      background: #fff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-      transition: background 0.3s;
-    }
-
-    body.dark .login-container {
-      background: #2b2b3d;
-    }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    input {
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: background 0.3s, color 0.3s;
-    }
-
-    body.dark input {
-      background: #3a3a4f;
-      color: #fff;
-      border: 1px solid #555;
-    }
-
-    button {
-      background: #3498db;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background 0.2s;
-    }
-
-    button:hover {
-      background: #2980b9;
-    }
-
-    .error {
-      text-align: center;
-      color: #e74c3c;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-
-    .switch-mode {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 15px;
-    }
-
-    .delete-account {
-      margin-top: 20px;
-      background: #e74c3c;
-    }
-
-    .delete-account:hover {
-      background: #c0392b;
-    }
-  </style>
+  <link rel="stylesheet" href="/style/login.css" />
 </head>
 <body>
   <div class="login-container">
     <h1>🔐 Iniciar Sesión</h1>
 
-    <% if (typeof error !== "undefined") { %>
+    <% if (error) { %>
       <p class="error"><%= error %></p>
     <% } %>
 
-    <form action="/login" method="POST">
+    <form action="/login" method="POST" class="login-form">
       <input type="text" name="username" placeholder="Usuario" required />
       <input type="password" name="password" placeholder="Contraseña" required />
       <button type="submit">Entrar</button>
     </form>
 
-    <div class="switch-mode">
-      <span>🌙 Modo oscuro</span>
-      <label class="switch">
-        <input type="checkbox" id="darkToggle">
-        <span class="slider"></span>
-      </label>
-    </div>
+    <a href="/register" class="link">Crear cuenta nueva</a>
 
-    <form action="/delete-account" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar tu cuenta? Esta acción es irreversible.')">
-      <button type="submit" class="delete-account">Eliminar cuenta</button>
-    </form>
+    <button id="darkToggle" class="dark-btn">🌙 Modo Oscuro</button>
   </div>
 
   <script>
-    const toggle = document.getElementById("darkToggle");
-    toggle.addEventListener("change", () => {
-      document.body.classList.toggle("dark", toggle.checked);
-      localStorage.setItem("darkMode", toggle.checked);
+    const btn = document.getElementById('darkToggle');
+    btn.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark'));
     });
 
-    // Mantener preferencia al recargar
-    if (localStorage.getItem("darkMode") === "true") {
-      document.body.classList.add("dark");
-      toggle.checked = true;
+    // Mantener modo
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark');
     }
   </script>
 </body>

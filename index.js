@@ -1,138 +1,117 @@
 import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
 import bodyParser from "body-parser";
-import qrcode from "qrcode";
-import fetch from "node-fetch";
 import session from "express-session";
+import bcrypt from "bcrypt";
+import QRCode from "qrcode";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
-app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
+app.set("view engine", "ejs");
 
+// Sesión
 app.use(
   session({
-    secret: "secret-key",
+    secret: "supersecreto",
     resave: false,
     saveUninitialized: false,
   })
 );
 
-// Simulación usuarios
-let users = [{ username: "admin", password: "1234" }];
+// Simulación de usuarios en memoria
+let users = [{ username: "admin", password: await bcrypt.hash("1234", 10) }];
 let qrList = [];
 
-// Página de login
-app.get("/login", (req, res) => {
-  res.render("login", { error: req.query.error });
-});
-
-// Autenticación
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  const user = users.find(u => u.username === username && u.password === password);
-
-  if (!user) {
-    return res.redirect("/login?error=Usuario o contraseña incorrecto");
-  }
-
-  req.session.user = user.username;
-  res.redirect("/");
-});
-
-// Eliminar cuenta
-app.post("/delete-account", (req, res) => {
-  if (!req.session.user) return res.redirect("/login");
-
-  users = users.filter(u => u.username !== req.session.user);
-  req.session.destroy(() => {
-    res.redirect("/login?error=Cuenta eliminada correctamente");
-  });
-});
-
-// Middleware autenticación
-function isAuth(req, res, next) {
-  if (!req.session.user) return res.redirect("/login");
-  next();
+// Middleware de autenticación
+function checkAuth(req, res, next) {
+  if (req.session.user) return next();
+  res.redirect("/login");
 }
 
-// Página principal protegida
-app.get("/", isAuth, (req, res) => {
-  res.render("index", { qrList });
+// ====== RUTAS ======
+app.get("/", checkAuth, (req, res) => {
+  res.render("index", { qrList, user: req.session.user });
 });
 
-// Generar QR
-app.post("/generate", isAuth, async (req, res) => {
-  try {
-    const originalUrl = req.body.url;
-    if (!originalUrl || originalUrl.trim() === "") return res.redirect("/");
+// -------- LOGIN --------
+app.get("/login", (req, res) => {
+  res.render("login", { error: null });
+});
 
-    const id = Date.now().toString();
-    const internalUrl = `${req.protocol}://${req.get("host")}/qr/${id}`;
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+  const user = users.find((u) => u.username === username);
 
-    let shortInternalUrl;
-    try {
-      const resFetch = await fetch(
-        `https://is.gd/create.php?format=simple&url=${encodeURIComponent(internalUrl)}`
-      );
-      shortInternalUrl = await resFetch.text();
-      if (!shortInternalUrl.startsWith("http")) shortInternalUrl = internalUrl;
-    } catch {
-      shortInternalUrl = internalUrl;
-    }
-
-    const qrDataUrl = await qrcode.toDataURL(shortInternalUrl);
-
-    qrList.push({
-      id,
-      originalUrl,
-      internalUrl,
-      shortInternalUrl,
-      qrDataUrl,
-      scans: 0,
-      lastScan: null
-    });
-
+  if (user && (await bcrypt.compare(password, user.password))) {
+    req.session.user = username;
     res.redirect("/");
-  } catch (err) {
-    console.error("❌ Error generando QR:", err);
-    res.status(500).send("Error generando QR");
+  } else {
+    res.render("login", { error: "Nombre de usuario o contraseña incorrecto" });
   }
 });
 
-// Actualizar URL
-app.post("/update/:id", isAuth, (req, res) => {
-  const { id } = req.params;
-  const { newUrl } = req.body;
+// -------- REGISTER --------
+app.get("/register", (req, res) => {
+  res.render("register", { error: null });
+});
 
-  const qrItem = qrList.find(q => q.id === id);
-  if (!qrItem) return res.status(404).send("QR no encontrado");
+app.post("/register", async (req, res) => {
+  const { username, password } = req.body;
+  if (users.find((u) => u.username === username)) {
+    return res.render("register", { error: "Usuario ya existe" });
+  }
+  const hashed = await bcrypt.hash(password, 10);
+  users.push({ username, password: hashed });
+  res.redirect("/login");
+});
 
-  qrItem.originalUrl = newUrl;
+// -------- LOGOUT --------
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => res.redirect("/login"));
+});
+
+// -------- ELIMINAR USUARIO --------
+app.post("/delete-user", checkAuth, (req, res) => {
+  users = users.filter((u) => u.username !== req.session.user);
+  req.session.destroy(() => res.redirect("/login"));
+});
+
+// -------- CAMBIAR CONTRASEÑA --------
+app.post("/change-password", checkAuth, async (req, res) => {
+  const { newPassword } = req.body;
+  users = users.map((u) =>
+    u.username === req.session.user
+      ? { ...u, password: await bcrypt.hash(newPassword, 10) }
+      : u
+  );
   res.redirect("/");
 });
 
-// Eliminar QR
-app.post("/delete/:id", isAuth, (req, res) => {
-  qrList = qrList.filter(q => q.id !== req.params.id);
+// -------- CREAR QR --------
+app.post("/generate", checkAuth, async (req, res) => {
+  const { text } = req.body;
+  const qr = await QRCode.toDataURL(text);
+  qrList.push({ text, qr });
   res.redirect("/");
 });
 
-// Redirigir escaneo
-app.get("/qr/:id", (req, res) => {
-  const qrItem = qrList.find(q => q.id === req.params.id);
-  if (!qrItem) return res.status(404).send("QR no encontrado");
-
-  qrItem.scans++;
-  qrItem.lastScan = new Date().toLocaleString();
-
-  res.redirect(qrItem.originalUrl);
+// -------- ACTUALIZAR URL --------
+app.post("/update/:index", checkAuth, async (req, res) => {
+  const { index } = req.params;
+  const { newText } = req.body;
+  if (qrList[index]) {
+    qrList[index].text = newText;
+  }
+  res.redirect("/");
 });
 
-app.listen(PORT, () => console.log(`✅ Servidor en http://localhost:${PORT}`));
+// -------- ELIMINAR QR --------
+app.post("/delete/:index", checkAuth, (req, res) => {
+  const { index } = req.params;
+  qrList.splice(index, 1);
+  res.redirect("/");
+});
+
+app.listen(PORT, () => console.log(`🚀 Servidor en http://localhost:${PORT}`));

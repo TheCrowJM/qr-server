@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Registro</title>
-<link rel="stylesheet" href="/style.css">
+  <meta charset="UTF-8">
+  <title>Registrar usuario</title>
+  <link rel="stylesheet" href="/style/login.css" />
 </head>
 <body>
-<div class="container">
-  <h1>Registro de Usuario</h1>
-  <form action="/register" method="post">
-    <input type="text" name="username" placeholder="Usuario" required>
-    <input type="password" name="password" placeholder="Contraseña" required>
-    <button type="submit">Registrar</button>
-  </form>
-  <p>¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
-</div>
+  <div class="login-container">
+    <h1>📝 Registrar Usuario</h1>
+
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <form action="/register" method="POST" class="login-form">
+      <input type="text" name="username" placeholder="Usuario" required />
+      <input type="password" name="password" placeholder="Contraseña" required />
+      <button type="submit">Registrar</button>
+    </form>
+
+    <a href="/login" class="link">Volver al inicio</a>
+  </div>
 </body>
 </html>
