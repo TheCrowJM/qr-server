@@ -6,7 +6,7 @@ import bodyParser from "body-parser";
 import qrcode from "qrcode";
 import fetch from "node-fetch";
 import session from "express-session";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import fs from "fs/promises";
 
 const __filename = fileURLToPath(import.meta.url);
