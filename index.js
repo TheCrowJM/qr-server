@@ -1,3 +1,4 @@
+// index.js
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -5,106 +6,196 @@ import bodyParser from "body-parser";
 import qrcode from "qrcode";
 import fetch from "node-fetch";
 import session from "express-session";
+import bcrypt from "bcrypt";
+import fs from "fs/promises";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const USERS_FILE = path.join(__dirname, "users.json");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración de EJS y carpeta pública
+// EJS + estáticos
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Configuración de sesión
+// Sesiones
 app.use(session({
-  secret: 'qr-secret-key',
+  secret: process.env.SESSION_SECRET || "cambiar_por_algo_seguro",
   resave: false,
-  saveUninitialized: true
+  saveUninitialized: false,
+  cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 día
 }));
 
-// Lista temporal de usuarios
-let users = [];
-// Lista temporal de QRs
-let qrList = [];
+// --- Helpers para users.json ---
+async function loadUsers() {
+  try {
+    const raw = await fs.readFile(USERS_FILE, "utf8");
+    return JSON.parse(raw || "[]");
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      await saveUsers([]);
+      return [];
+    }
+    console.error("Error leyendo users.json:", err);
+    return [];
+  }
+}
+async function saveUsers(users) {
+  try {
+    await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2), "utf8");
+  } catch (err) {
+    console.error("Error escribiendo users.json:", err);
+  }
+}
+async function findUser(username) {
+  const users = await loadUsers();
+  return users.find(u => u.username === username);
+}
+async function updateUser(updated) {
+  const users = await loadUsers();
+  const idx = users.findIndex(u => u.username === updated.username);
+  if (idx !== -1) users[idx] = updated;
+  else users.push(updated);
+  await saveUsers(users);
+}
+async function removeUser(username) {
+  const users = await loadUsers();
+  const filtered = users.filter(u => u.username !== username);
+  await saveUsers(filtered);
+}
 
-// Middleware para verificar sesión
+// --- QR storage (en memoria para ahora) ---
+let qrList = []; // cada item: { id, owner, originalUrl, internalUrl, shortInternalUrl, qrDataUrl, scans, lastScan }
+
+// --- Middlewares ---
 function requireLogin(req, res, next) {
   if (!req.session.user) return res.redirect("/login");
   next();
 }
 
-// ------------------- LOGIN / REGISTER -------------------
-
-// Mostrar login
-app.get("/login", (req, res) => {
-  res.render("login", { darkMode: req.session.darkMode || false, user: req.session.user });
+// Pasar usuario a vistas
+app.use((req, res, next) => {
+  res.locals.currentUser = req.session.user || null;
+  next();
 });
 
-// Procesar login
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  const user = users.find(u => u.username === username && u.password === password);
-  if (user) {
-    req.session.user = user;
-    req.session.darkMode = user.darkMode || false;
-    res.redirect("/");
-  } else {
-    res.send("Usuario o contraseña incorrectos");
-  }
-});
-
-// Mostrar registro
+// --- RUTAS USUARIOS ---
+// Register form
 app.get("/register", (req, res) => {
-  res.render("register");
+  res.render("register", { error: null });
 });
 
-// Procesar registro
-app.post("/register", (req, res) => {
+// Register submit
+app.post("/register", async (req, res) => {
   const { username, password } = req.body;
-  if (users.find(u => u.username === username)) return res.send("Usuario ya existe");
-  users.push({ username, password, darkMode: false });
-  res.redirect("/login");
+  if (!username || !password) return res.render("register", { error: "Completa todos los campos" });
+
+  const users = await loadUsers();
+  if (users.find(u => u.username === username)) return res.render("register", { error: "Usuario ya existe" });
+
+  const hash = await bcrypt.hash(password, 10);
+  const now = new Date().toISOString();
+  const newUser = {
+    username,
+    password: hash,
+    createdAt: now,
+    lastLogin: null,
+    qrCount: 0
+  };
+  users.push(newUser);
+  await saveUsers(users);
+
+  req.session.user = username;
+  res.redirect("/");
 });
 
-// Cambiar contraseña
+// Login form
+app.get("/login", (req, res) => {
+  res.render("login", { error: null });
+});
+
+// Login submit
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+  const users = await loadUsers();
+  const user = users.find(u => u.username === username);
+  if (!user) return res.render("login", { error: "Usuario o contraseña incorrectos" });
+
+  const ok = await bcrypt.compare(password, user.password);
+  if (!ok) return res.render("login", { error: "Usuario o contraseña incorrectos" });
+
+  // actualizar lastLogin
+  user.lastLogin = new Date().toISOString();
+  await updateUser(user);
+
+  req.session.user = username;
+  res.redirect("/");
+});
+
+// Logout
+app.post("/logout", (req, res) => {
+  req.session.destroy(() => res.redirect("/login"));
+});
+
+// Delete account (desde sesión)
+app.post("/delete-account", requireLogin, async (req, res) => {
+  const username = req.session.user;
+  // borrar usuario del JSON
+  await removeUser(username);
+  // borrar QRs del usuario
+  qrList = qrList.filter(q => q.owner !== username);
+  // destruir sesión
+  req.session.destroy(() => res.redirect("/register"));
+});
+
+// Change password form
 app.get("/change-password", requireLogin, (req, res) => {
-  res.render("change-password", { darkMode: req.session.darkMode });
+  res.render("change-password", { error: null, success: null });
 });
 
-app.post("/change-password", requireLogin, (req, res) => {
+// Change password submit
+app.post("/change-password", requireLogin, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  if (req.session.user.password !== oldPassword) return res.send("Contraseña actual incorrecta");
-  req.session.user.password = newPassword;
-  res.send("Contraseña actualizada correctamente. <a href='/'>Volver</a>");
+  const users = await loadUsers();
+  const user = users.find(u => u.username === req.session.user);
+  if (!user) return res.render("change-password", { error: "Usuario no encontrado", success: null });
+
+  const ok = await bcrypt.compare(oldPassword, user.password);
+  if (!ok) return res.render("change-password", { error: "Contraseña actual incorrecta", success: null });
+
+  const hash = await bcrypt.hash(newPassword, 10);
+  user.password = hash;
+  await updateUser(user);
+
+  res.render("change-password", { error: null, success: "Contraseña actualizada correctamente" });
 });
 
-// Toggle dark mode
-app.post("/toggle-dark", requireLogin, (req, res) => {
-  req.session.darkMode = !req.session.darkMode;
-  req.session.user.darkMode = req.session.darkMode;
-  res.redirect("back");
-});
+// --- Helper acortador (is.gd) ---
+async function shortenInternalUrl(internalUrl) {
+  try {
+    const r = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(internalUrl)}`);
+    const text = await r.text();
+    if (text && text.startsWith("http")) return text;
+  } catch (err) {
+    console.warn("Acortador falló:", err?.message || err);
+  }
+  return internalUrl;
+}
 
-// Eliminar cuenta
-app.post("/delete-account", requireLogin, (req, res) => {
-  users = users.filter(u => u.username !== req.session.user.username);
-  req.session.destroy(err => {
-    if (err) return res.status(500).send("Error al eliminar cuenta");
-    res.redirect("/register");
-  });
-});
-
-// ------------------- QR -------------------
-
-// Página principal
+// --- RUTAS QR ---
+// Dashboard (lista de QRs del usuario)
 app.get("/", requireLogin, (req, res) => {
-  res.render("index", { qrList, darkMode: req.session.darkMode });
+  const username = req.session.user;
+  const userQrs = qrList.filter(q => q.owner === username);
+  res.render("index", { qrList: userQrs, darkMode: false }); // darkMode aplicado desde cliente
 });
 
-// Crear un nuevo QR
+// Create QR (incrementar qrCount en users.json)
 app.post("/generate", requireLogin, async (req, res) => {
   try {
     const originalUrl = req.body.url;
@@ -112,24 +203,14 @@ app.post("/generate", requireLogin, async (req, res) => {
 
     const id = Date.now().toString();
     const internalUrl = `${req.protocol}://${req.get("host")}/qr/${id}`;
-
-    // Acortar la URL interna usando is.gd
-    let shortInternalUrl;
-    try {
-      const resFetch = await fetch(
-        `https://is.gd/create.php?format=simple&url=${encodeURIComponent(internalUrl)}`
-      );
-      shortInternalUrl = await resFetch.text();
-      if (!shortInternalUrl.startsWith("http")) shortInternalUrl = internalUrl;
-    } catch (err) {
-      console.error("Error acortando URL, se usará la URL interna", err);
-      shortInternalUrl = internalUrl;
-    }
-
+    const shortInternalUrl = await shortenInternalUrl(internalUrl);
     const qrDataUrl = await qrcode.toDataURL(shortInternalUrl);
+
+    const username = req.session.user;
 
     qrList.push({
       id,
+      owner: username,
       originalUrl,
       internalUrl,
       shortInternalUrl,
@@ -138,39 +219,61 @@ app.post("/generate", requireLogin, async (req, res) => {
       lastScan: null
     });
 
+    // actualizar contador en users.json
+    const users = await loadUsers();
+    const user = users.find(u => u.username === username);
+    if (user) {
+      user.qrCount = (user.qrCount || 0) + 1;
+      await updateUser(user);
+    }
+
     res.redirect("/");
   } catch (err) {
-    console.error("❌ Error generando QR:", err);
+    console.error("Error generando QR:", err);
     res.status(500).send("Error generando QR");
   }
 });
 
-// Actualizar solo la URL de destino (QR no cambia)
-app.post("/update/:id", requireLogin, (req, res) => {
+// Update originalUrl only (QR image remains)
+app.post("/update/:id", requireLogin, async (req, res) => {
   const { id } = req.params;
   const { newUrl } = req.body;
+  const qr = qrList.find(q => q.id === id && q.owner === req.session.user);
+  if (!qr) return res.status(404).send("QR no encontrado o sin permiso");
 
-  const qrItem = qrList.find(q => q.id === id);
-  if (!qrItem) return res.status(404).send("QR no encontrado");
-
-  qrItem.originalUrl = newUrl;
+  qr.originalUrl = newUrl;
+  // actualizar shortInternalUrl (opcional: acortar la interna de redirección)
+  // dejamos el shortInternalUrl igual (es la URL que apunta al servidor), no la que redirige al destino.
   res.redirect("/");
 });
 
-// Eliminar QR
-app.post("/delete/:id", requireLogin, (req, res) => {
-  qrList = qrList.filter(q => q.id !== req.params.id);
+// Delete QR
+app.post("/delete/:id", requireLogin, async (req, res) => {
+  const { id } = req.params;
+  const username = req.session.user;
+  const idx = qrList.findIndex(q => q.id === id && q.owner === username);
+  if (idx !== -1) {
+    qrList.splice(idx, 1);
+    // decrementar contador usuario
+    const users = await loadUsers();
+    const user = users.find(u => u.username === username);
+    if (user) {
+      user.qrCount = Math.max(0, (user.qrCount || 1) - 1);
+      await updateUser(user);
+    }
+  }
   res.redirect("/");
 });
 
-// Redirección al escanear el QR
+// QR redirect (public)
 app.get("/qr/:id", (req, res) => {
-  const qrItem = qrList.find(q => q.id === req.params.id);
-  if (!qrItem) return res.status(404).send("QR no encontrado");
+  const qr = qrList.find(q => q.id === req.params.id);
+  if (!qr) return res.status(404).send("QR no encontrado");
 
-  qrItem.scans++;
-  qrItem.lastScan = new Date().toLocaleString();
-  res.redirect(qrItem.originalUrl);
+  qr.scans++;
+  qr.lastScan = new Date().toLocaleString();
+  res.redirect(qr.originalUrl);
 });
 
+// Start server
 app.listen(PORT, () => console.log(`✅ Servidor corriendo en http://localhost:${PORT}`));

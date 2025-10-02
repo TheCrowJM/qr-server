@@ -1,57 +1,89 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Generator Pro</title>
-<link rel="stylesheet" href="/style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QR Manager - Dashboard</title>
+  <link rel="stylesheet" href="/style.css" />
 </head>
-<body class="<%= darkMode ? 'dark-mode' : '' %>">
+<body>
+  <header class="topbar">
+    <div class="brand">QR Manager Pro</div>
 
-<header>
-  <h1>📱 Generador de Códigos QR Profesional</h1>
-  <form action="/toggle-dark" method="post" style="display:inline">
-    <button type="submit">Toggle Dark Mode</button>
-  </form>
-  <form action="/logout" method="post" style="display:inline">
-    <button type="submit">Cerrar sesión</button>
-  </form>
-  <a href="/change-password">Cambiar contraseña</a>
-</header>
+    <div class="controls">
+      <span class="user">Usuario: <strong><%= currentUser %></strong></span>
 
-<main>
-  <form action="/generate" method="POST">
-    <input type="url" name="url" placeholder="Introduce la URL" required>
-    <button type="submit">Generar QR</button>
-  </form>
+      <form action="/generate" method="POST" class="mini-form">
+        <input name="url" type="hidden" value="" id="quickUrlInput">
+      </form>
 
-  <div class="qr-grid">
-    <% if (qrList.length === 0) { %>
-      <p class="empty-state">Aún no has generado ningún QR.</p>
-    <% } %>
+      <button id="themeToggle" class="btn small">Dark</button>
 
-    <% qrList.forEach(qr => { %>
-      <div class="qr-card">
-        <div class="qr-preview"><img src="<%= qr.qrDataUrl %>" alt="QR"></div>
-        <div class="qr-details">
-          <p><strong>Original:</strong> <a href="<%= qr.originalUrl %>" target="_blank"><%= qr.originalUrl %></a></p>
-          <p><strong>QR corto:</strong> <a href="<%= qr.shortInternalUrl %>" target="_blank"><%= qr.shortInternalUrl %></a></p>
-          <p><strong>Escaneos:</strong> <%= qr.scans %></p>
-          <p><strong>Último escaneo:</strong> <%= qr.lastScan || "Nunca" %></p>
+      <a class="btn small" href="/change-password">Cambiar contraseña</a>
 
-          <form action="/update/<%= qr.id %>" method="POST" class="update-form">
-            <input type="url" name="newUrl" placeholder="Nueva URL" required>
-            <button type="submit" class="btn-update">Actualizar</button>
-          </form>
+      <form action="/delete-account" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar tu cuenta? Esta acción es irreversible');" style="display:inline;">
+        <button class="btn danger small" type="submit">Eliminar cuenta</button>
+      </form>
 
-          <form action="/delete/<%= qr.id %>" method="POST" class="delete-form">
-            <button type="submit" class="btn-delete">Eliminar</button>
-          </form>
+      <form action="/logout" method="POST" style="display:inline;">
+        <button class="btn outline small" type="submit">Cerrar sesión</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="create-section">
+      <h1>Generador de QR profesional</h1>
+      <form class="new-qr-form" action="/generate" method="POST">
+        <input type="url" name="url" placeholder="Introduce la URL a la que quieras apuntar" required />
+        <button type="submit">➕ Crear QR</button>
+      </form>
+    </section>
+
+    <section class="qr-grid">
+      <% if (qrList.length === 0) { %>
+        <div class="empty-state">
+          <h2>Aún no tienes QRs</h2>
+          <p class="hint">Crea tu primer QR usando el formulario de arriba.</p>
         </div>
-      </div>
-    <% }) %>
-  </div>
-</main>
+      <% } %>
 
+      <% qrList.forEach(qr => { %>
+        <article class="qr-card">
+          <div class="qr-preview">
+            <img src="<%= qr.qrDataUrl %>" alt="QR">
+          </div>
+          <div class="qr-details">
+            <p><strong>Original:</strong> <a href="<%= qr.originalUrl %>" target="_blank" rel="noopener"><%= qr.originalUrl %></a></p>
+            <p><strong>Enlace corto:</strong> <a href="<%= qr.shortInternalUrl %>" target="_blank" rel="noopener"><%= qr.shortInternalUrl %></a></p>
+            <p><strong>Escaneos:</strong> <%= qr.scans %></p>
+            <p><strong>Último escaneo:</strong> <%= qr.lastScan || "Nunca" %></p>
+
+            <form class="update-form" action="/update/<%= qr.id %>" method="POST">
+              <input type="url" name="newUrl" placeholder="Nueva URL" required />
+              <button class="btn btn-update" type="submit">Actualizar</button>
+            </form>
+
+            <form action="/delete/<%= qr.id %>" method="POST">
+              <button class="btn btn-delete" type="submit">Eliminar</button>
+            </form>
+          </div>
+        </article>
+      <% }) %>
+    </section>
+
+    <footer>
+      <p>QR Manager • guardado en local (users.json) • <em>Hecho profesional</em></p>
+    </footer>
+  </main>
+
+  <script src="/dark-mode.js"></script>
+  <script>
+    // connected to toggle btn
+    const btn = document.getElementById('themeToggle');
+    btn.addEventListener('click', () => {
+      window.toggleTheme();
+    });
+  </script>
 </body>
 </html>

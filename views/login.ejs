@@ -1,32 +1,33 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login - QR Server</title>
-<link rel="stylesheet" href="/style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login - QR Manager</title>
+  <link rel="stylesheet" href="/style.css" />
 </head>
-<body class="<%= darkMode ? 'dark-mode' : '' %>">
-<div class="container">
-  <h1>Iniciar Sesión</h1>
-  <form action="/login" method="post">
-    <input type="text" name="username" placeholder="Usuario" required>
-    <input type="password" name="password" placeholder="Contraseña" required>
-    <button type="submit">Entrar</button>
-  </form>
-
-  <div class="login-options">
-    <p>¿No tienes cuenta? <a href="/register">Regístrate</a></p>
-    <% if (user) { %>
-    <form action="/delete-account" method="post" onsubmit="return confirm('¿Estás seguro de eliminar tu cuenta?');">
-      <button type="submit" class="btn-delete">Eliminar Cuenta</button>
-    </form>
+<body>
+  <div class="auth-card">
+    <h2>Iniciar sesión</h2>
+    <% if (typeof error !== 'undefined' && error) { %>
+      <p class="error"><%= error %></p>
     <% } %>
+    <form action="/login" method="POST">
+      <input name="username" placeholder="Usuario" required />
+      <input name="password" type="password" placeholder="Contraseña" required />
+      <button class="btn" type="submit">Entrar</button>
+    </form>
+    <div style="margin-top:12px;">
+      <a href="/register">Crear cuenta</a>
+    </div>
+    <div style="margin-top:12px;">
+      <button id="themeToggle" class="btn small">Dark</button>
+    </div>
   </div>
 
-  <form action="/toggle-dark" method="post">
-    <button type="submit" class="btn-toggle">Modo Oscuro</button>
-  </form>
-</div>
+  <script src="/dark-mode.js"></script>
+  <script>
+    document.getElementById('themeToggle').addEventListener('click', window.toggleTheme);
+  </script>
 </body>
 </html>
