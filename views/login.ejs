@@ -1,32 +1,141 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login - QR Server</title>
-<link rel="stylesheet" href="/style.css">
-</head>
-<body class="<%= darkMode ? 'dark-mode' : '' %>">
-<div class="container">
-  <h1>Iniciar Sesión</h1>
-  <form action="/login" method="post">
-    <input type="text" name="username" placeholder="Usuario" required>
-    <input type="password" name="password" placeholder="Contraseña" required>
-    <button type="submit">Entrar</button>
-  </form>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iniciar sesión</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f6fa;
+      margin: 0;
+      padding: 0;
+      transition: background 0.3s, color 0.3s;
+    }
 
-  <div class="login-options">
-    <p>¿No tienes cuenta? <a href="/register">Regístrate</a></p>
-    <% if (user) { %>
-    <form action="/delete-account" method="post" onsubmit="return confirm('¿Estás seguro de eliminar tu cuenta?');">
-      <button type="submit" class="btn-delete">Eliminar Cuenta</button>
-    </form>
+    body.dark {
+      background: #1e1e2f;
+      color: #e0e0e0;
+    }
+
+    .login-container {
+      max-width: 400px;
+      margin: 80px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      transition: background 0.3s;
+    }
+
+    body.dark .login-container {
+      background: #2b2b3d;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    input {
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.dark input {
+      background: #3a3a4f;
+      color: #fff;
+      border: 1px solid #555;
+    }
+
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+
+    .error {
+      text-align: center;
+      color: #e74c3c;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .switch-mode {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 15px;
+    }
+
+    .delete-account {
+      margin-top: 20px;
+      background: #e74c3c;
+    }
+
+    .delete-account:hover {
+      background: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h1>🔐 Iniciar Sesión</h1>
+
+    <% if (typeof error !== "undefined") { %>
+      <p class="error"><%= error %></p>
     <% } %>
+
+    <form action="/login" method="POST">
+      <input type="text" name="username" placeholder="Usuario" required />
+      <input type="password" name="password" placeholder="Contraseña" required />
+      <button type="submit">Entrar</button>
+    </form>
+
+    <div class="switch-mode">
+      <span>🌙 Modo oscuro</span>
+      <label class="switch">
+        <input type="checkbox" id="darkToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <form action="/delete-account" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar tu cuenta? Esta acción es irreversible.')">
+      <button type="submit" class="delete-account">Eliminar cuenta</button>
+    </form>
   </div>
 
-  <form action="/toggle-dark" method="post">
-    <button type="submit" class="btn-toggle">Modo Oscuro</button>
-  </form>
-</div>
+  <script>
+    const toggle = document.getElementById("darkToggle");
+    toggle.addEventListener("change", () => {
+      document.body.classList.toggle("dark", toggle.checked);
+      localStorage.setItem("darkMode", toggle.checked);
+    });
+
+    // Mantener preferencia al recargar
+    if (localStorage.getItem("darkMode") === "true") {
+      document.body.classList.add("dark");
+      toggle.checked = true;
+    }
+  </script>
 </body>
 </html>

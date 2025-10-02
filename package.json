@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "vercel-build": "echo 'Vercel build completado'"
+    "vercel-build": "echo '✅ Build completado en Vercel'"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
@@ -16,3 +16,4 @@
     "qrcode": "^1.5.3"
   }
 }
+
