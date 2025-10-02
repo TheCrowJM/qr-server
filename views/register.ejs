@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Registro - QR Manager</title>
-  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/style.css"/>
 </head>
 <body>
   <div class="auth-card">
@@ -17,17 +17,13 @@
       <input name="password" type="password" placeholder="Contraseña" required />
       <button class="btn" type="submit">Registrarse</button>
     </form>
+    <p style="margin-top:12px;"><a href="/login">Ya tengo cuenta</a></p>
     <div style="margin-top:12px;">
-      <a href="/login">Ya tengo cuenta</a>
-    </div>
-    <div style="margin-top:12px;">
-      <button id="themeToggle" class="btn small">Dark</button>
+      <button id="themeToggle" class="btn small" data-theme-toggle>Dark</button>
     </div>
   </div>
 
   <script src="/dark-mode.js"></script>
-  <script>
-    document.getElementById('themeToggle').addEventListener('click', window.toggleTheme);
-  </script>
+  <script>document.getElementById('themeToggle').addEventListener('click', window.toggleTheme);</script>
 </body>
 </html>

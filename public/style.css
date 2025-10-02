@@ -6,7 +6,6 @@
   --muted: #6b7280;
   --accent: #4b6cb7;
   --danger: #ff4d4d;
-  --success: #27ae60;
   --shadow: 0 6px 20px rgba(46,60,80,0.08);
 }
 
@@ -54,18 +53,20 @@ body{
 /* auth card */
 .auth-card{max-width:420px;margin:60px auto;padding:22px;border-radius:12px;background:var(--card);box-shadow:var(--shadow);text-align:center}
 .auth-card input{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid #e6eef8}
+.auth-card .error{color:#c0392b}
+.auth-card .success{color:#27ae60}
 
 /* footer & empty */
 .empty-state{text-align:center;padding:28px;color:var(--muted)}
 footer{margin-top:28px;text-align:center;color:var(--muted);font-size:0.9rem}
 
-/* dark theme */
+/* dark theme - toggled with class "dark" on <html> or <body> */
 body.dark { --bg:#0f1720; --card:#0b1220; --text:#e6eef8; --muted:#9aa6b2; --accent:#5aa0ff; --shadow: 0 6px 20px rgba(0,0,0,0.5); }
 body.dark .topbar{background:linear-gradient(135deg,#223a7a,#06102a)}
 body.dark .btn.outline{border-color:rgba(255,255,255,0.08)}
 body.dark .new-qr-form input[type="url"], body.dark .update-form input{background:#071026;color:var(--text);border:1px solid #123047}
 
-/* small screens */
+/* responsive */
 @media (max-width:720px){
   .new-qr-form input[type="url"]{width:60%}
   .topbar{flex-direction:column;gap:8px;text-align:center}
