@@ -1,8 +1,8 @@
 {
   "name": "qr-server",
   "version": "1.0.0",
-  "type": "module",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js",
     "vercel-build": "echo 'Vercel build completado'"
@@ -10,11 +10,12 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
+    "cookie-parser": "^1.4.6",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
-    "jsonwebtoken": "^9.0.0",
-    "mongoose": "^7.5.0",
+    "mongoose": "^7.7.0",
     "node-fetch": "^3.3.2",
-    "qrcode": "^1.5.3"
+    "qrcode": "^1.5.3",
+    "jsonwebtoken": "^9.0.1"
   }
 }
