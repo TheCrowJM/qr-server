@@ -1,41 +1,32 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Iniciar sesión</title>
-  <link rel="stylesheet" href="/style/login.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - QR Server</title>
+<link rel="stylesheet" href="/style.css">
 </head>
-<body>
-  <div class="login-container">
-    <h1>🔐 Iniciar Sesión</h1>
+<body class="<%= darkMode ? 'dark-mode' : '' %>">
+<div class="container">
+  <h1>Iniciar Sesión</h1>
+  <form action="/login" method="post">
+    <input type="text" name="username" placeholder="Usuario" required>
+    <input type="password" name="password" placeholder="Contraseña" required>
+    <button type="submit">Entrar</button>
+  </form>
 
-    <% if (error) { %>
-      <p class="error"><%= error %></p>
-    <% } %>
-
-    <form action="/login" method="POST" class="login-form">
-      <input type="text" name="username" placeholder="Usuario" required />
-      <input type="password" name="password" placeholder="Contraseña" required />
-      <button type="submit">Entrar</button>
+  <div class="login-options">
+    <p>¿No tienes cuenta? <a href="/register">Regístrate</a></p>
+    <% if (user) { %>
+    <form action="/delete-account" method="post" onsubmit="return confirm('¿Estás seguro de eliminar tu cuenta?');">
+      <button type="submit" class="btn-delete">Eliminar Cuenta</button>
     </form>
-
-    <a href="/register" class="link">Crear cuenta nueva</a>
-
-    <button id="darkToggle" class="dark-btn">🌙 Modo Oscuro</button>
+    <% } %>
   </div>
 
-  <script>
-    const btn = document.getElementById('darkToggle');
-    btn.addEventListener('click', () => {
-      document.body.classList.toggle('dark');
-      localStorage.setItem('darkMode', document.body.classList.contains('dark'));
-    });
-
-    // Mantener modo
-    if (localStorage.getItem('darkMode') === 'true') {
-      document.body.classList.add('dark');
-    }
-  </script>
+  <form action="/toggle-dark" method="post">
+    <button type="submit" class="btn-toggle">Modo Oscuro</button>
+  </form>
+</div>
 </body>
 </html>
