@@ -1,13 +1,17 @@
 // index.js
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const session = require('express-session');
-const bcrypt = require('bcrypt');
-const path = require('path');
+import 'dotenv/config';
+import express from 'express';
+import mongoose from 'mongoose';
+import session from 'express-session';
+import bcrypt from 'bcrypt';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const User = require('./models/User');
-const QR = require('./models/QR');
+import User from './models/User.js';
+import QR from './models/QR.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -30,94 +34,78 @@ app.set('view engine', 'ejs');
 
 // Conexión a MongoDB
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('MongoDB conectado'))
   .catch((err) => console.log('Error MongoDB:', err));
 
-// Middleware para pasar info de usuario a todas las vistas
+// Middleware global para user
 app.use((req, res, next) => {
   res.locals.user = req.session.userId;
   next();
 });
 
-// Rutas
-
-// Página principal
-app.get('/', (req, res) => {
-  res.render('index'); // Renderiza views/index.ejs
+// Rutas GET
+app.get('/', (req, res) => res.render('index'));
+app.get('/register', (req, res) => res.render('register'));
+app.get('/login', (req, res) => res.render('login'));
+app.get('/logout', (req, res) => {
+  req.session.destroy(() => res.redirect('/login'));
+});
+app.get('/change-password', (req, res) => {
+  if (!req.session.userId) return res.redirect('/login');
+  res.render('change-password');
+});
+app.get('/qrcode', async (req, res) => {
+  if (!req.session.userId) return res.redirect('/login');
+  const qrs = await QR.find({ owner: req.session.userId });
+  res.render('qrcode', { qrs });
 });
 
-// Registro
-app.get('/register', (req, res) => {
-  res.render('register');
-});
-
+// Rutas POST
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
-  try {
-    const user = await User.create({ username, password: hashedPassword });
-    req.session.userId = user._id;
-    res.redirect('/');
-  } catch (err) {
-    res.send('Error al registrar: ' + err.message);
-  }
-});
+  if (!username || !password) return res.redirect('/register');
 
-// Login
-app.get('/login', (req, res) => {
-  res.render('login');
+  const existingUser = await User.findOne({ username });
+  if (existingUser) return res.redirect('/register');
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = new User({ username, password: hashedPassword });
+  await user.save();
+  req.session.userId = user._id;
+  res.redirect('/');
 });
 
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username });
-  if (!user) return res.send('Usuario no encontrado');
+  if (!user) return res.redirect('/login');
 
   const match = await bcrypt.compare(password, user.password);
-  if (!match) return res.send('Contraseña incorrecta');
+  if (!match) return res.redirect('/login');
+
+  user.lastLogin = new Date();
+  await user.save();
 
   req.session.userId = user._id;
   res.redirect('/');
 });
 
-// Logout
-app.get('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/login');
-  });
-});
-
-// QR
-app.get('/qrcode', async (req, res) => {
-  if (!req.session.userId) return res.redirect('/login');
-
-  const qrs = await QR.find({ user: req.session.userId });
-  res.render('qrcode', { qrs });
-});
-
-// Cambiar contraseña
-app.get('/change-password', (req, res) => {
-  if (!req.session.userId) return res.redirect('/login');
-  res.render('change-password');
-});
-
 app.post('/change-password', async (req, res) => {
   if (!req.session.userId) return res.redirect('/login');
   const { oldPassword, newPassword } = req.body;
-
   const user = await User.findById(req.session.userId);
+
   const match = await bcrypt.compare(oldPassword, user.password);
-  if (!match) return res.send('Contraseña actual incorrecta');
+  if (!match) return res.redirect('/change-password');
 
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
-  res.send('Contraseña cambiada con éxito');
+  res.redirect('/');
 });
 
-// Servidor
+// Servir archivos estáticos si los hay
+app.use(express.static(path.join(__dirname, 'public')));
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`));
