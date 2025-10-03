@@ -10,6 +10,7 @@ import { nanoid } from "nanoid";
 import path from "path";
 import { fileURLToPath } from "url";
 import MongoStore from "connect-mongo";
+import cookieParser from "cookie-parser";
 
 import User from "./models/User.js";
 import QR from "./models/QR.js";
@@ -20,7 +21,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.set("trust proxy", 1); // ✅ necesario para Vercel y cookies seguras detrás de proxy
+app.set("trust proxy", 1); // necesario para Vercel y cookies seguras detrás de proxy
 
 const PORT = process.env.PORT || 3000;
 
@@ -29,6 +30,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+app.use(cookieParser()); // ✅ cookies
 
 // --- Session
 const sessSecret = process.env.SESSION_SECRET || "cambiame_localmente";
@@ -42,7 +44,7 @@ app.use(
     store: mongoURI ? MongoStore.create({ mongoUrl: mongoURI }) : undefined,
     cookie: { 
       maxAge: 1000 * 60 * 60 * 24, // 1 día
-      secure: process.env.NODE_ENV === "production", // HTTPS en producción
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax"
     },
   })
@@ -61,13 +63,31 @@ if (!mongoURI) {
 // --- locals middleware
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.username || null;
-  res.locals.darkMode = !!req.session.darkMode;
+
+  // 1️⃣ lee darkMode de cookie si existe
+  let dark = req.cookies?.darkMode;
+  if (dark === undefined) {
+    // 2️⃣ si no existe cookie, aplica preferencia del sistema (light/dark)
+    dark = req.headers['sec-ch-prefers-color-scheme'] || "light";
+    dark = dark === "dark";
+    // guarda cookie por defecto
+    res.cookie("darkMode", dark, { maxAge: 1000*60*60*24*365, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
+  } else {
+    dark = dark === "true";
+  }
+
+  res.locals.darkMode = dark || !!req.session.darkMode;
   next();
 });
 
-// Necesario para cookies
-import cookieParser from "cookie-parser";
-app.use(cookieParser());
+// Toggle dark mode con cookie
+app.post("/toggle-darkmode", (req, res) => {
+  const current = req.cookies?.darkMode === "true";
+  const nextValue = !current;
+  res.cookie("darkMode", nextValue, { maxAge: 1000*60*60*24*365, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
+  req.session.darkMode = nextValue;
+  res.redirect(req.headers.referer || "/");
+});
 
 // ---------------------- RUTAS -------------------------
 
