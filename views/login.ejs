@@ -6,6 +6,33 @@
   <title>Iniciar sesión - QR Manager Pro</title>
   <link rel="stylesheet" href="/css/style.css" />
   <script defer src="/js/dark-mode.js"></script>
+  <style>
+    /* 🛠️ Corrección: inputs amplios y redondeados */
+    input[type="text"],
+    input[type="password"],
+    input[name="username"],
+    input[name="password"] {
+      width: 100%;
+      padding: 12px 14px;
+      margin-top: 6px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 4px var(--accent);
+    }
+
+    label {
+      font-weight: 600;
+      margin-top: 12px;
+      display: block;
+    }
+  </style>
 </head>
 <body class="<%= darkMode ? 'dark-mode' : '' %>">
   <div class="container">
@@ -13,7 +40,9 @@
       <div class="header">
         <div class="brand">QR Manager Pro</div>
         <div class="controls">
-          <button class="btn small" data-toggle-dark><%= darkMode ? 'Light Mode' : 'Dark Mode' %></button>
+          <button class="btn small" data-toggle-dark>
+            <%= darkMode ? 'Light Mode' : 'Dark Mode' %>
+          </button>
         </div>
       </div>
 
@@ -25,16 +54,33 @@
       <form action="/login" method="POST" style="margin-top:8px;">
         <label>Usuario</label>
         <input name="username" required placeholder="usuario" />
+
         <label>Contraseña</label>
         <input name="password" type="password" required placeholder="contraseña" />
+
         <div style="display:flex; gap:8px; margin-top:12px;">
           <button class="btn" type="submit">Iniciar sesión</button>
           <a href="/" class="link" style="align-self:center">Volver</a>
         </div>
       </form>
 
-      <p style="margin-top:18px" class="note">¿No tienes cuenta? <a href="/register" style="color:var(--accent); text-decoration:underline">Regístrate</a></p>
+      <p style="margin-top:18px" class="note">
+        ¿No tienes cuenta?
+        <a href="/register" style="color:var(--accent); text-decoration:underline">Regístrate</a>
+      </p>
     </div>
   </div>
+
+  <!-- 🧠 Este script es útil si luego usas campos URL -->
+  <script>
+    document.querySelectorAll('input[type="url"]').forEach(input => {
+      input.addEventListener('blur', () => {
+        let val = input.value.trim();
+        if (val && !/^https?:\/\//i.test(val)) {
+          input.value = 'https://' + val;
+        }
+      });
+    });
+  </script>
 </body>
 </html>

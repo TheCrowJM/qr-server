@@ -1,4 +1,3 @@
-// index.js
 import express from "express";
 import session from "express-session";
 import bodyParser from "body-parser";
@@ -30,24 +29,27 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // --- Session
 const sessSecret = process.env.SESSION_SECRET || "cambiame_localmente";
-app.use(session({
-  secret: sessSecret,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 día
-}));
+app.use(
+  session({
+    secret: sessSecret,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 1000 * 60 * 60 * 24 }, // 1 día
+  })
+);
 
 // --- MongoDB connect
 const mongoURI = process.env.MONGODB_URI;
 if (!mongoURI) {
   console.error("❌ ERROR: MONGODB_URI no está definida. Ponla en las variables de entorno.");
 } else {
-  mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+  mongoose
+    .connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("Conectado a MongoDB"))
-    .catch(err => console.error("❌ Error conectando a MongoDB:", err));
+    .catch((err) => console.error("❌ Error conectando a MongoDB:", err));
 }
 
-// --- locals middleware (evita undefined en vistas)
+// --- locals middleware
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.username || null;
   res.locals.darkMode = !!req.session.darkMode;
@@ -71,15 +73,15 @@ app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
-    if (!user) return res.render("login", { error: "Usuario no encontrado", darkMode: req.session.darkMode || false });
+    if (!user)
+      return res.render("login", { error: "Usuario no encontrado", darkMode: req.session.darkMode || false });
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.render("login", { error: "Contraseña incorrecta", darkMode: req.session.darkMode || false });
+    if (!match)
+      return res.render("login", { error: "Contraseña incorrecta", darkMode: req.session.darkMode || false });
 
-    // login ok
     req.session.userId = user._id;
     req.session.username = user.username;
-    // update lastLogin
     user.lastLogin = new Date();
     await user.save();
 
@@ -98,11 +100,14 @@ app.get("/register", (req, res) => {
 app.post("/register", async (req, res) => {
   try {
     const { username, password, passwordConfirm } = req.body;
-    if (!username || !password) return res.render("register", { error: "Debes completar campos", darkMode: req.session.darkMode || false });
-    if (password !== passwordConfirm) return res.render("register", { error: "Contraseñas no coinciden", darkMode: req.session.darkMode || false });
+    if (!username || !password)
+      return res.render("register", { error: "Debes completar campos", darkMode: req.session.darkMode || false });
+    if (password !== passwordConfirm)
+      return res.render("register", { error: "Contraseñas no coinciden", darkMode: req.session.darkMode || false });
 
     const exists = await User.findOne({ username });
-    if (exists) return res.render("register", { error: "Usuario ya existe", darkMode: req.session.darkMode || false });
+    if (exists)
+      return res.render("register", { error: "Usuario ya existe", darkMode: req.session.darkMode || false });
 
     const hash = await bcrypt.hash(password, 10);
     const created = await User.create({ username, password: hash });
@@ -122,44 +127,43 @@ app.get("/logout", (req, res) => {
   res.redirect("/");
 });
 
-// Dashboard (pantalla principal)
+// Dashboard
 app.get("/dashboard", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
 
   const qrs = await QR.find({ owner: req.session.userId }).sort({ createdAt: -1 }).lean();
-  // format lastScan for EJS display
-  qrs.forEach(q => {
+  qrs.forEach((q) => {
     if (q.lastScan) q.lastScan = new Date(q.lastScan);
   });
 
   res.render("dashboard", {
     qrs,
     currentUser: req.session.username,
-    darkMode: req.session.darkMode || false
+    darkMode: req.session.darkMode || false,
   });
 });
 
-// Toggle dark mode (POST)
+// Toggle dark mode
 app.post("/toggle-darkmode", (req, res) => {
   req.session.darkMode = !req.session.darkMode;
   res.redirect(req.headers.referer || "/");
 });
 
-// Generate QR (create)
+// ✅ Generate QR (create) - con https automático
 app.post("/generate", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   try {
     let { originalUrl } = req.body;
     if (!originalUrl || originalUrl.trim() === "") return res.redirect("/dashboard");
 
-    // add protocol if missing
-    if (!/^https?:\/\//i.test(originalUrl)) originalUrl = "https://" + originalUrl;
+    originalUrl = originalUrl.trim();
+    if (!/^https?:\/\//i.test(originalUrl)) {
+      originalUrl = "https://" + originalUrl;
+    }
 
-    // generate id and internal URL
     const id = nanoid(12);
     const internalUrl = `${req.protocol}://${req.get("host")}/qr/${id}`;
 
-    // shorten internalUrl with is.gd
     let shortInternalUrl;
     try {
       const r = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(internalUrl)}`);
@@ -170,11 +174,9 @@ app.post("/generate", async (req, res) => {
       shortInternalUrl = internalUrl;
     }
 
-    // generate QR image (data URL) from shortInternalUrl
     const qrDataUrl = await qrcode.toDataURL(shortInternalUrl);
 
-    // save in DB (owner = ObjectId user)
-    const qrDoc = await QR.create({
+    await QR.create({
       owner: req.session.userId,
       id,
       originalUrl,
@@ -182,10 +184,9 @@ app.post("/generate", async (req, res) => {
       shortInternalUrl,
       qrDataUrl,
       scans: 0,
-      lastScan: null
+      lastScan: null,
     });
 
-    // increment user's qrCount
     await User.findByIdAndUpdate(req.session.userId, { $inc: { qrCount: 1 } });
 
     res.redirect("/dashboard");
@@ -195,19 +196,17 @@ app.post("/generate", async (req, res) => {
   }
 });
 
-// Route that is called by shortInternalUrl (is.gd -> internalUrl -> this route)
+// Redirección QR
 app.get("/qr/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const qr = await QR.findOne({ id });
     if (!qr) return res.status(404).send("QR no encontrado");
 
-    // increment counters
     qr.scans = (qr.scans || 0) + 1;
     qr.lastScan = new Date();
     await qr.save();
 
-    // redirect to originalUrl
     res.redirect(qr.originalUrl);
   } catch (err) {
     console.error("Error al redirigir QR:", err);
@@ -215,16 +214,19 @@ app.get("/qr/:id", async (req, res) => {
   }
 });
 
-// Update originalUrl for a QR (does NOT change id, qrDataUrl or shortInternalUrl)
+// ✅ Update originalUrl con https automático
 app.post("/update/:id", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   try {
     const { id } = req.params;
     let { originalUrl } = req.body;
     if (!originalUrl) return res.redirect("/dashboard");
-    if (!/^https?:\/\//i.test(originalUrl)) originalUrl = "https://" + originalUrl;
 
-    // Update only originalUrl (keep same internal/short/qr image)
+    originalUrl = originalUrl.trim();
+    if (!/^https?:\/\//i.test(originalUrl)) {
+      originalUrl = "https://" + originalUrl;
+    }
+
     await QR.updateOne({ id, owner: req.session.userId }, { $set: { originalUrl } });
     res.redirect("/dashboard");
   } catch (err) {
@@ -259,12 +261,14 @@ app.post("/change-password", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   try {
     const { oldPassword, newPassword, confirmPassword } = req.body;
-    if (newPassword !== confirmPassword) return res.render("change-password", { error: "Confirmación no coincide", success: null, darkMode: req.session.darkMode || false });
+    if (newPassword !== confirmPassword)
+      return res.render("change-password", { error: "Confirmación no coincide", success: null, darkMode: req.session.darkMode || false });
 
     const user = await User.findById(req.session.userId);
     if (!user) return res.redirect("/login");
     const ok = await bcrypt.compare(oldPassword, user.password);
-    if (!ok) return res.render("change-password", { error: "Contraseña actual incorrecta", success: null, darkMode: req.session.darkMode || false });
+    if (!ok)
+      return res.render("change-password", { error: "Contraseña actual incorrecta", success: null, darkMode: req.session.darkMode || false });
 
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
@@ -275,7 +279,7 @@ app.post("/change-password", async (req, res) => {
   }
 });
 
-// Delete account (and its QRs)
+// Delete account
 app.post("/delete-account", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   try {
@@ -291,7 +295,7 @@ app.post("/delete-account", async (req, res) => {
 });
 
 // fallback
-app.use((req,res) => res.status(404).send("Ruta no encontrada"));
+app.use((req, res) => res.status(404).send("Ruta no encontrada"));
 
 // Start server
-app.listen(PORT, () => console.log(`Servidor en puerto http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`✅ Servidor en http://localhost:${PORT}`));

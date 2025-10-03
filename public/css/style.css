@@ -156,3 +156,33 @@ label { font-size:0.9rem; color:var(--muted); display:block; margin-bottom:6px; 
   .create-qr { flex-direction:column; align-items:stretch; }
   .create-qr button { width:100%; }
 }
+
+/* ✅ Campos en blanco en modo oscuro */
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode select {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* ✅ Campos ligeramente grises en modo claro */
+body:not(.dark-mode) input,
+body:not(.dark-mode) textarea,
+body:not(.dark-mode) select {
+  background: #f3f4f6 !important;
+  color: #17243b !important;
+}
+
+/* ✅ Placeholders visibles en ambos modos */
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280;
+  opacity: 0.8;
+}
+
+.dark-mode input::placeholder,
+.dark-mode textarea::placeholder {
+  color: #5b5b5b;
+  opacity: 0.9;
+}
+
