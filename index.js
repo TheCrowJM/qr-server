@@ -1,155 +1,169 @@
 import express from "express";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
-import session from "express-session";
 import path from "path";
-import User from "./models/User.js";
-import QR from "./models/QR.js";
+import { fileURLToPath } from "url";
+import bodyParser from "body-parser";
+import session from "express-session";
+import mongoose from "mongoose";
 import qrcode from "qrcode";
 import fetch from "node-fetch";
+import bcrypt from "bcrypt";
+import dotenv from "dotenv";
+
+import User from "./models/User.js";
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
-const __dirname = path.resolve();
+const PORT = process.env.PORT || 3000;
 
-// Middlewares
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "fallback_secret",
-    resave: false,
-    saveUninitialized: false,
-  })
-);
-
-// Configuración de vistas y carpeta pública
+// -------------------- CONFIG --------------------
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Conexión a MongoDB
+// Sesiones
+app.use(session({
+  secret: process.env.SESSION_SECRET || "default_secret",
+  resave: false,
+  saveUninitialized: false,
+}));
+
+// -------------------- MONGODB --------------------
 const connectDB = async () => {
   try {
+    if (!process.env.MONGODB_URI) {
+      console.error("❌ MONGODB_URI no está definida.");
+      return;
+    }
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
     });
-    console.log("✅ Conectado a MongoDB Atlas");
+    console.log("✅ Conectado a MongoDB");
   } catch (err) {
     console.error("❌ Error conectando a MongoDB:", err);
-    process.exit(1);
   }
 };
+connectDB();
 
-// Middleware para proteger rutas
-const requireAuth = (req, res, next) => {
-  if (!req.session.user) return res.redirect("/login");
+// -------------------- LISTA DE QRS --------------------
+let qrList = [];
+
+// -------------------- MIDDLEWARE --------------------
+const requireLogin = (req, res, next) => {
+  if (!req.session.userId) return res.redirect("/login");
   next();
 };
 
-// -------------------------------------------
-// RUTAS DE USUARIO
-// -------------------------------------------
-
-app.get("/register", (req, res) => {
-  res.render("register");
-});
-
-app.post("/register", async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    const existing = await User.findOne({ username });
-    if (existing) return res.render("register", { error: "Usuario ya existe" });
-
-    const user = new User({ username, password });
-    await user.save();
-    res.redirect("/login");
-  } catch (err) {
-    console.error("Register error:", err);
-    res.status(500).send("Error interno del servidor");
+const getCurrentUser = async (req, res, next) => {
+  if (req.session.userId) {
+    try {
+      const user = await User.findById(req.session.userId);
+      res.locals.currentUser = user ? user.username : null;
+    } catch {
+      res.locals.currentUser = null;
+    }
+  } else {
+    res.locals.currentUser = null;
   }
-});
+  next();
+};
 
-app.get("/login", (req, res) => {
-  res.render("login");
-});
+app.use(getCurrentUser);
 
+// -------------------- RUTAS --------------------
+
+// LOGIN
+app.get("/login", (req, res) => res.render("login"));
 app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
   try {
-    const user = await User.findOne({ username, password });
-    if (!user) return res.render("login", { error: "Credenciales incorrectas" });
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user) return res.render("login", { error: "Usuario no encontrado" });
 
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.render("login", { error: "Contraseña incorrecta" });
+
+    req.session.userId = user._id;
     user.lastLogin = new Date();
     await user.save();
 
-    req.session.user = user;
-    res.redirect("/index");
+    res.redirect("/");
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).send("Error interno del servidor");
+    res.status(500).send("Error interno");
   }
 });
 
-app.get("/logout", (req, res) => {
-  req.session.destroy();
-  res.redirect("/login");
-});
-
-app.get("/change-password", requireAuth, (req, res) => {
-  res.render("change-password");
-});
-
-app.post("/change-password", requireAuth, async (req, res) => {
-  const { newPassword } = req.body;
+// REGISTER
+app.get("/register", (req, res) => res.render("register"));
+app.post("/register", async (req, res) => {
   try {
-    const user = await User.findById(req.session.user._id);
-    user.password = newPassword;
+    const { username, password } = req.body;
+    const hash = await bcrypt.hash(password, 10);
+    const user = new User({ username, password: hash });
     await user.save();
-    res.redirect("/index");
+    req.session.userId = user._id;
+    res.redirect("/");
   } catch (err) {
-    console.error("Change password error:", err);
-    res.status(500).send("Error interno del servidor");
+    console.error("Register error:", err);
+    res.render("register", { error: "Error al registrar. Usuario puede existir." });
   }
 });
 
-app.post("/delete-user", requireAuth, async (req, res) => {
-  try {
-    await User.findByIdAndDelete(req.session.user._id);
-    req.session.destroy();
-    res.redirect("/register");
-  } catch (err) {
-    console.error("Delete user error:", err);
-    res.status(500).send("Error interno del servidor");
-  }
+// LOGOUT
+app.post("/logout", (req, res) => {
+  req.session.destroy(() => res.redirect("/login"));
 });
 
-// -------------------------------------------
-// RUTAS DE QR
-// -------------------------------------------
-
-app.get("/index", requireAuth, async (req, res) => {
+// CHANGE PASSWORD
+app.get("/change-password", requireLogin, (req, res) => res.render("change-password"));
+app.post("/change-password", requireLogin, async (req, res) => {
   try {
-    const qrList = await QR.find({ owner: req.session.user._id });
-    res.render("index", { currentUser: req.session.user.username, qrList });
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findById(req.session.userId);
+    if (!user) return res.redirect("/login");
+
+    const match = await bcrypt.compare(oldPassword, user.password);
+    if (!match) return res.render("change-password", { error: "Contraseña anterior incorrecta" });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    res.render("change-password", { success: "Contraseña cambiada" });
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error cargando QRs");
+    res.status(500).send("Error interno");
   }
 });
 
-app.post("/generate", requireAuth, async (req, res) => {
+// DELETE USER
+app.post("/delete-user", requireLogin, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.session.userId);
+    req.session.destroy(() => res.redirect("/register"));
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error interno");
+  }
+});
+
+// HOME / QR LIST
+app.get("/", requireLogin, (req, res) => res.render("index", { qrList }));
+
+// GENERAR QR
+app.post("/generate", requireLogin, async (req, res) => {
   try {
     const originalUrl = req.body.url;
-    if (!originalUrl) return res.redirect("/index");
+    if (!originalUrl) return res.redirect("/");
 
     const id = Date.now().toString();
     const internalUrl = `${req.protocol}://${req.get("host")}/qr/${id}`;
 
-    // Acortar URL con is.gd
+    // Acortar URL
     let shortInternalUrl;
     try {
       const response = await fetch(
@@ -163,41 +177,52 @@ app.post("/generate", requireAuth, async (req, res) => {
 
     const qrDataUrl = await qrcode.toDataURL(shortInternalUrl);
 
-    const qr = new QR({
-      owner: req.session.user._id,
+    qrList.push({
       id,
       originalUrl,
       internalUrl,
       shortInternalUrl,
       qrDataUrl,
+      scans: 0,
+      lastScan: null
     });
-    await qr.save();
 
-    await User.findByIdAndUpdate(req.session.user._id, { $inc: { qrCount: 1 } });
+    // Actualizar contador de QRs en usuario
+    const user = await User.findById(req.session.userId);
+    if (user) {
+      user.qrCount += 1;
+      await user.save();
+    }
 
-    res.redirect("/index");
+    res.redirect("/");
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error generando QR:", err);
     res.status(500).send("Error generando QR");
   }
 });
 
-// Redirección de QR
-app.get("/qr/:id", async (req, res) => {
-  const qr = await QR.findOne({ id: req.params.id });
-  if (!qr) return res.status(404).send("QR no encontrado");
-
-  qr.scans++;
-  qr.lastScan = new Date();
-  await qr.save();
-
-  res.redirect(qr.originalUrl);
+// ACTUALIZAR URL QR
+app.post("/update/:id", requireLogin, (req, res) => {
+  const qrItem = qrList.find(q => q.id === req.params.id);
+  if (!qrItem) return res.status(404).send("QR no encontrado");
+  qrItem.originalUrl = req.body.newUrl;
+  res.redirect("/");
 });
 
-// -------------------------------------------
-// INICIAR SERVIDOR
-// -------------------------------------------
-connectDB().then(() => {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`🚀 Servidor en http://localhost:${PORT}`));
+// ELIMINAR QR
+app.post("/delete/:id", requireLogin, (req, res) => {
+  qrList = qrList.filter(q => q.id !== req.params.id);
+  res.redirect("/");
 });
+
+// REDIRECCIÓN QR
+app.get("/qr/:id", (req, res) => {
+  const qrItem = qrList.find(q => q.id === req.params.id);
+  if (!qrItem) return res.status(404).send("QR no encontrado");
+  qrItem.scans++;
+  qrItem.lastScan = new Date().toLocaleString();
+  res.redirect(qrItem.originalUrl);
+});
+
+// -------------------- START --------------------
+app.listen(PORT, () => console.log(`🚀 Servidor en ejecución en http://localhost:${PORT}`));
