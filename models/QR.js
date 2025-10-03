@@ -14,3 +14,4 @@ const qrSchema = new mongoose.Schema({
 export default mongoose.models.QR || mongoose.model("QR", qrSchema);
 
 
+
