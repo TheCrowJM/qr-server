@@ -1,24 +1,29 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>QR Manager Pro</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <script defer src="/js/dark-mode.js"></script>
 </head>
-<body>
-  <div class="brand">QR Manager Pro</div>
-  <div class="controls">
-    <span class="user">Usuario: <strong><%= currentUser || 'Invitado' %></strong></span>
-    <a href="/change-password">Cambiar contraseña</a>
-    <form action="/logout" method="POST" style="display:inline;">
-      <button type="submit">Cerrar sesión</button>
-    </form>
-  </div>
+<body class="<%= darkMode ? 'dark-mode' : '' %>">
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div class="brand">QR Manager Pro</div>
+        <div class="controls">
+          <button class="btn small" data-toggle-dark> <%= darkMode ? 'Light Mode' : 'Dark Mode' %> </button>
+          <a href="/login" class="btn small">Iniciar sesión</a>
+          <a href="/register" class="btn small" style="background:var(--accent-dark)">Registrarte</a>
+        </div>
+      </div>
 
-  <h2>QRs recientes</h2>
-  <ul>
-    <% qrs.forEach(qr => { %>
-      <li><%= qr.originalUrl %> - Scans: <%= qr.scans %></li>
-    <% }) %>
-  </ul>
+      <div style="text-align:center; padding:32px 10px;">
+        <h2 style="margin:0 0 8px;">Organiza tus QR dinámicos</h2>
+        <p class="note">Inicia sesión o regístrate para empezar a crear códigos QR que puedas actualizar sin cambiar su imagen.</p>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

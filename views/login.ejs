@@ -1,27 +1,40 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Login - QR Manager</title>
-  <link rel="stylesheet" href="/style.css"/>
+  <title>Iniciar sesión - QR Manager Pro</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <script defer src="/js/dark-mode.js"></script>
 </head>
-<body>
-  <div class="auth-card">
-    <h2>Iniciar sesión</h2>
-    <% if (typeof error !== 'undefined' && error) { %>
-      <p class="error"><%= error %></p>
-    <% } %>
-    <form action="/login" method="POST">
-      <input name="username" placeholder="Usuario" required />
-      <input name="password" type="password" placeholder="Contraseña" required />
-      <button class="btn" type="submit">Entrar</button>
-    </form>
-    <p><a href="/register">Crear cuenta</a></p>
-    <button id="themeToggle" class="btn small" data-theme-toggle>Dark</button>
-  </div>
+<body class="<%= darkMode ? 'dark-mode' : '' %>">
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div class="brand">QR Manager Pro</div>
+        <div class="controls">
+          <button class="btn small" data-toggle-dark><%= darkMode ? 'Light Mode' : 'Dark Mode' %></button>
+        </div>
+      </div>
 
-  <script src="/dark-mode.js"></script>
-  <script>document.getElementById('themeToggle').addEventListener('click', window.toggleTheme);</script>
+      <h1 style="margin-top:6px">Login</h1>
+      <% if (typeof error !== 'undefined' && error) { %>
+        <p style="color:var(--danger)"><%= error %></p>
+      <% } %>
+
+      <form action="/login" method="POST" style="margin-top:8px;">
+        <label>Usuario</label>
+        <input name="username" required placeholder="usuario" />
+        <label>Contraseña</label>
+        <input name="password" type="password" required placeholder="contraseña" />
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button class="btn" type="submit">Iniciar sesión</button>
+          <a href="/" class="link" style="align-self:center">Volver</a>
+        </div>
+      </form>
+
+      <p style="margin-top:18px" class="note">¿No tienes cuenta? <a href="/register" style="color:var(--accent); text-decoration:underline">Regístrate</a></p>
+    </div>
+  </div>
 </body>
 </html>

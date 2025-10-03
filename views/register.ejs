@@ -1,27 +1,57 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Registro - QR Manager</title>
-  <link rel="stylesheet" href="/style.css"/>
+  <title>Registrarte - QR Manager Pro</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <script defer src="/js/dark-mode.js"></script>
 </head>
-<body>
-  <div class="auth-card">
-    <h2>Crear cuenta</h2>
-    <% if (typeof error !== 'undefined' && error) { %>
-      <p class="error"><%= error %></p>
-    <% } %>
-    <form action="/register" method="POST">
-      <input name="username" placeholder="Usuario" required />
-      <input name="password" type="password" placeholder="Contraseña" required />
-      <button class="btn" type="submit">Registrarse</button>
-    </form>
-    <p><a href="/login">Ya tengo cuenta</a></p>
-    <button id="themeToggle" class="btn small" data-theme-toggle>Dark</button>
+<body class="<%= darkMode ? 'dark-mode' : '' %>">
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div class="brand">QR Manager Pro</div>
+        <div class="controls">
+          <button class="btn small" data-toggle-dark><%= darkMode ? 'Light Mode' : 'Dark Mode' %></button>
+        </div>
+      </div>
+
+      <h1>Crear cuenta</h1>
+      <% if (typeof error !== 'undefined' && error) { %>
+        <p style="color:var(--danger)"><%= error %></p>
+      <% } %>
+
+      <form action="/register" method="POST" style="margin-top:8px;">
+        <label>Usuario</label>
+        <input name="username" required placeholder="usuario" />
+        <label>Contraseña</label>
+        <input name="password" type="password" required placeholder="contraseña" />
+        <label>Confirmar contraseña</label>
+        <input name="passwordConfirm" type="password" required placeholder="repite la contraseña" />
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button class="btn" type="submit">Registrarte</button>
+          <a href="/" class="link" style="align-self:center">Volver</a>
+        </div>
+      </form>
+
+      <p style="margin-top:18px" class="note">¿Ya tienes cuenta? <a href="/login" style="color:var(--accent); text-decoration:underline">Iniciar sesión</a></p>
+    </div>
   </div>
 
-  <script src="/dark-mode.js"></script>
-  <script>document.getElementById('themeToggle').addEventListener('click', window.toggleTheme);</script>
+  <script>
+    // simple client-side password match check to avoid roundtrip
+    const form = document.querySelector('form[action="/register"]');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        const p = form.querySelector('input[name="password"]').value;
+        const pc = form.querySelector('input[name="passwordConfirm"]').value;
+        if (p !== pc) {
+          e.preventDefault();
+          alert('Las contraseñas no coinciden');
+        }
+      });
+    }
+  </script>
 </body>
 </html>
