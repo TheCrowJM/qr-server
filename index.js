@@ -9,6 +9,7 @@ import fetch from "node-fetch";
 import { nanoid } from "nanoid";
 import path from "path";
 import { fileURLToPath } from "url";
+import MongoStore from "connect-mongo";
 
 import User from "./models/User.js";
 import QR from "./models/QR.js";
@@ -19,6 +20,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set("trust proxy", 1); // ✅ necesario para Vercel y cookies seguras detrás de proxy
+
 const PORT = process.env.PORT || 3000;
 
 // --- Express / view config
@@ -29,17 +32,23 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // --- Session
 const sessSecret = process.env.SESSION_SECRET || "cambiame_localmente";
+const mongoURI = process.env.MONGODB_URI;
+
 app.use(
   session({
     secret: sessSecret,
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 }, // 1 día
+    store: mongoURI ? MongoStore.create({ mongoUrl: mongoURI }) : undefined,
+    cookie: { 
+      maxAge: 1000 * 60 * 60 * 24, // 1 día
+      secure: process.env.NODE_ENV === "production", // HTTPS en producción
+      sameSite: "lax"
+    },
   })
 );
 
 // --- MongoDB connect
-const mongoURI = process.env.MONGODB_URI;
 if (!mongoURI) {
   console.error("❌ ERROR: MONGODB_URI no está definida. Ponla en las variables de entorno.");
 } else {
@@ -299,5 +308,3 @@ app.use((req, res) => res.status(404).send("Ruta no encontrada"));
 
 // Start server
 app.listen(PORT, () => console.log(`✅ Servidor en http://localhost:${PORT}`));
-
-
