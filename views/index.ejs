@@ -1,25 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>QR Manager - Dashboard</title>
-  <link rel="stylesheet" href="/style.css"/>
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">QR Manager Pro</div>
     <div class="controls">
       <span class="user">Usuario: <strong><%= currentUser %></strong></span>
-
       <button id="themeToggle" class="btn small" data-theme-toggle>Dark</button>
-
       <a class="btn small" href="/change-password">Cambiar contraseña</a>
-
-      <form action="/delete-account" method="POST" onsubmit="return confirm('¿Eliminar cuenta? Esta acción es irreversible');" style="display:inline;">
+      <form action="/delete-account" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar cuenta?');">
         <button class="btn danger small" type="submit">Eliminar cuenta</button>
       </form>
-
       <a class="btn outline small" href="/logout">Cerrar sesión</a>
     </div>
   </header>
@@ -35,20 +31,15 @@
 
     <section class="qr-grid">
       <% if (qrList.length === 0) { %>
-        <div class="empty-state">
-          <h2>Aún no tienes QRs</h2>
-          <p class="hint">Crea tu primer QR usando el formulario de arriba.</p>
-        </div>
+        <div class="empty-state"><h2>Aún no tienes QRs</h2></div>
       <% } %>
 
       <% qrList.forEach(qr => { %>
         <article class="qr-card">
-          <div class="qr-preview">
-            <img src="<%= qr.qrDataUrl %>" alt="QR">
-          </div>
+          <div class="qr-preview"><img src="<%= qr.qrDataUrl %>" alt="QR"></div>
           <div class="qr-details">
-            <p><strong>Original:</strong> <a href="<%= qr.originalUrl %>" target="_blank" rel="noopener"><%= qr.originalUrl %></a></p>
-            <p><strong>Enlace corto:</strong> <a href="<%= qr.shortInternalUrl %>" target="_blank" rel="noopener"><%= qr.shortInternalUrl %></a></p>
+            <p><strong>Original:</strong> <a href="<%= qr.originalUrl %>" target="_blank"><%= qr.originalUrl %></a></p>
+            <p><strong>Enlace corto:</strong> <a href="<%= qr.shortInternalUrl %>" target="_blank"><%= qr.shortInternalUrl %></a></p>
             <p><strong>Escaneos:</strong> <%= qr.scans %></p>
             <p><strong>Último escaneo:</strong> <%= qr.lastScan ? qr.lastScan.toLocaleString() : "Nunca" %></p>
 
@@ -65,14 +56,10 @@
       <% }) %>
     </section>
 
-    <footer>
-      <p>QR Manager • MongoDB • <em>Profesional</em></p>
-    </footer>
+    <footer><p>QR Manager • MongoDB • Profesional</p></footer>
   </main>
 
   <script src="/dark-mode.js"></script>
-  <script>
-    document.getElementById('themeToggle').addEventListener('click', window.toggleTheme);
-  </script>
+  <script>document.getElementById('themeToggle').addEventListener('click', window.toggleTheme);</script>
 </body>
 </html>

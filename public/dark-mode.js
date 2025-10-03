@@ -1,45 +1,16 @@
 // public/dark-mode.js
 (function () {
-  const THEME_KEY = "qr_theme"; // "dark" or "light"
-
-  function applyTheme(theme) {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-      document.body.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      document.body.classList.remove("dark");
-    }
-  }
-
-  function getStoredTheme() {
-    try { return localStorage.getItem(THEME_KEY); } catch { return null; }
-  }
-  function storeTheme(theme) {
-    try { localStorage.setItem(THEME_KEY, theme); } catch {}
-  }
-
-  // Init: default LIGHT unless stored
-  const stored = getStoredTheme();
-  applyTheme(stored || "light");
-
-  window.toggleTheme = function () {
-    const current = getStoredTheme() || (document.body.classList.contains("dark") ? "dark" : "light");
-    const next = current === "dark" ? "light" : "dark";
-    applyTheme(next);
-    storeTheme(next);
-
-    // update text on buttons annotated with data-theme-toggle
-    document.querySelectorAll("[data-theme-toggle]").forEach(btn => {
-      btn.textContent = next === "dark" ? "Light" : "Dark";
-    });
+  const KEY = "qr_theme";
+  function apply(t){ if(t==="dark"){document.documentElement.classList.add("dark");document.body.classList.add("dark")} else {document.documentElement.classList.remove("dark");document.body.classList.remove("dark")} }
+  const stored = (()=>{try{return localStorage.getItem(KEY)}catch{return null}})();
+  apply(stored||"light");
+  window.toggleTheme = function(){
+    const cur = (document.body.classList.contains("dark")?"dark":"light");
+    const next = cur==="dark"?"light":"dark";
+    apply(next);
+    try{localStorage.setItem(KEY,next);}catch{}
+    document.querySelectorAll("[data-theme-toggle]").forEach(b=>b.textContent = next==="dark" ? "Light" : "Dark");
   };
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const current = getStoredTheme() || (document.body.classList.contains("dark") ? "dark" : "light");
-    document.querySelectorAll("[data-theme-toggle]").forEach(btn => {
-      btn.textContent = current === "dark" ? "Light" : "Dark";
-    });
-  });
+  document.addEventListener("DOMContentLoaded", ()=>{ const cur = (document.body.classList.contains("dark")?"dark":"light"); document.querySelectorAll("[data-theme-toggle]").forEach(b=>b.textContent = cur==="dark"? "Light":"Dark"); });
 })();
 
