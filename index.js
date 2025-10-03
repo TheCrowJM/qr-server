@@ -65,6 +65,20 @@ app.use((req, res, next) => {
   next();
 });
 
+// Necesario para cookies
+import cookieParser from "cookie-parser";
+app.use(cookieParser());
+
+// ---------------------- RUTAS -------------------------
+
+// Toggle dark mode con cookie
+app.post("/toggle-darkmode", (req, res) => {
+  const current = req.cookies?.darkMode === "true";
+  res.cookie("darkMode", !current, { maxAge: 1000 * 60 * 60 * 24 * 365, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
+  req.session.darkMode = !current;
+  res.redirect(req.headers.referer || "/");
+});
+
 // ---------------------- RUTAS -------------------------
 
 // Home / index
