@@ -186,3 +186,113 @@ textarea::placeholder {
   opacity: 0.9;
 }
 
+/* 🔽 Menú hamburguesa */
+.menu-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.menu-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  box-shadow: 0 6px 14px rgba(47,102,211,0.18);
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 10px 0;
+  display: none;
+  min-width: 200px;
+  z-index: 100;
+}
+
+.menu-dropdown.show {
+  display: block;
+}
+
+.menu-dropdown a,
+.menu-dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.95rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.menu-dropdown a:hover,
+.menu-dropdown button:hover {
+  background: rgba(47,102,211,0.08);
+}
+
+.menu-dropdown .danger-link {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* 📱 Responsive ajustes */
+@media (max-width: 768px) {
+  .header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .create-qr {
+    flex-direction: column;
+  }
+  .create-qr input {
+    width: 100%;
+  }
+  .qr-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 📱 Botones centrados y dentro de la tarjeta */
+.auth-buttons,
+.form-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.auth-buttons .btn,
+.form-buttons .btn {
+  flex: 1;
+  min-width: 140px;
+  text-align: center;
+}
+
+/* 📱 Responsivo en pantallas pequeñas */
+@media (max-width: 720px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .auth-buttons,
+  .form-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .auth-buttons .btn,
+  .form-buttons .btn {
+    width: 100%;
+  }
+}
+

@@ -10,19 +10,25 @@
 <body class="<%= darkMode ? 'dark-mode' : '' %>">
   <div class="container">
     <div class="card">
+
+      <!-- Header dentro de la tarjeta -->
       <div class="header">
         <div class="brand">QR Manager Pro</div>
-        <div class="controls">
-          <button class="btn small" data-toggle-dark> <%= darkMode ? 'Light Mode' : 'Dark Mode' %> </button>
-          <a href="/login" class="btn small">Iniciar sesión</a>
-          <a href="/register" class="btn small" style="background:var(--accent-dark)">Registrarte</a>
-        </div>
+        <button class="btn small" data-toggle-dark>
+          <%= darkMode ? 'Light Mode' : 'Dark Mode' %>
+        </button>
       </div>
 
       <div style="text-align:center; padding:32px 10px;">
-        <h2 style="margin:0 0 8px;">Organiza tus QR dinámicos</h2>
+        <h2>Organiza tus QR dinámicos</h2>
         <p class="note">Inicia sesión o regístrate para empezar a crear códigos QR que puedas actualizar sin cambiar su imagen.</p>
+
+        <div class="auth-buttons">
+          <a href="/login" class="btn">Iniciar sesión</a>
+          <a href="/register" class="btn" style="background:var(--accent-dark)">Registrarte</a>
+        </div>
       </div>
+
     </div>
   </div>
 </body>
