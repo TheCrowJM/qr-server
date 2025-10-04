@@ -24,16 +24,14 @@ const app = express();
 app.set("trust proxy", 1);
 
 const PORT = process.env.PORT || 3000;
-const BASE_URL = process.env.BASE_URL || "https://qrmanagerpro.vercel.app"; // 👈 URL fija para los QR
+const BASE_URL = process.env.BASE_URL || "https://qrmanagerpro.vercel.app";
 
-// --- Express config
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cookieParser());
 
-// --- Session config (auto-expira en 1 minuto)
 const sessSecret = process.env.SESSION_SECRET || "cambiame_localmente";
 const mongoURI = process.env.MONGODB_URI;
 
@@ -44,15 +42,14 @@ app.use(
     saveUninitialized: false,
     store: mongoURI ? MongoStore.create({ mongoUrl: mongoURI }) : undefined,
     cookie: { 
-      maxAge: 1000 * 60 * 1, // 🕐 1 minuto
+      maxAge: 1000 * 60 * 30,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax"
     },
-    rolling: true // 🔁 reinicia contador con cada interacción
+    rolling: true
   })
 );
 
-// --- MongoDB connect
 if (!mongoURI) {
   console.error("❌ ERROR: MONGODB_URI no está definida.");
 } else {
@@ -62,11 +59,9 @@ if (!mongoURI) {
     .catch((err) => console.error("❌ Error conectando a MongoDB:", err));
 }
 
-// --- locals middleware
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.username || null;
 
-  // Persistencia de dark mode usando cookie
   let dark = req.cookies?.darkMode;
   if (dark === undefined) {
     dark = req.headers['sec-ch-prefers-color-scheme'] === "dark";
@@ -79,7 +74,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Toggle dark mode con cookie
 app.post("/toggle-darkmode", (req, res) => {
   const current = req.cookies?.darkMode === "true";
   const nextValue = !current;
@@ -89,13 +83,11 @@ app.post("/toggle-darkmode", (req, res) => {
 
 // ---------------------- RUTAS -------------------------
 
-// Home
 app.get("/", (req, res) => {
   if (req.session.userId) return res.redirect("/dashboard");
   res.render("index", { darkMode: res.locals.darkMode });
 });
 
-// Login
 app.get("/login", (req, res) => {
   res.render("login", { error: null, darkMode: res.locals.darkMode });
 });
@@ -123,7 +115,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Register
 app.get("/register", (req, res) => {
   res.render("register", { error: null, darkMode: res.locals.darkMode });
 });
@@ -152,12 +143,10 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// Logout
 app.get("/logout", (req, res) => {
   req.session.destroy(() => res.redirect("/"));
 });
 
-// Dashboard
 app.get("/dashboard", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
 
@@ -173,7 +162,7 @@ app.get("/dashboard", async (req, res) => {
   });
 });
 
-// ✅ Generate QR con URL base fija
+// ✅ Crear QR
 app.post("/generate", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   try {
@@ -220,11 +209,10 @@ app.post("/generate", async (req, res) => {
   }
 });
 
-// Redirección QR
+// ✅ Redirección del QR
 app.get("/qr/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    const qr = await QR.findOne({ id });
+    const qr = await QR.findOne({ id: req.params.id });
     if (!qr) return res.status(404).send("QR no encontrado");
 
     qr.scans = (qr.scans || 0) + 1;
@@ -238,8 +226,81 @@ app.get("/qr/:id", async (req, res) => {
   }
 });
 
+// ✅ Actualizar QR
+app.post("/update/:id", async (req, res) => {
+  if (!req.session.userId) return res.redirect("/login");
+  try {
+    let { originalUrl } = req.body;
+    if (!originalUrl) return res.redirect("/dashboard");
+
+    if (!/^https?:\/\//i.test(originalUrl)) {
+      originalUrl = "https://" + originalUrl;
+    }
+
+    await QR.findOneAndUpdate(
+      { id: req.params.id, owner: req.session.userId },
+      { originalUrl }
+    );
+
+    res.redirect("/dashboard");
+  } catch (err) {
+    console.error("Error actualizando QR:", err);
+    res.status(500).send("Error actualizando QR");
+  }
+});
+
+// ✅ Eliminar QR
+app.post("/delete/:id", async (req, res) => {
+  if (!req.session.userId) return res.redirect("/login");
+  try {
+    await QR.findOneAndDelete({ id: req.params.id, owner: req.session.userId });
+    await User.findByIdAndUpdate(req.session.userId, { $inc: { qrCount: -1 } });
+    res.redirect("/dashboard");
+  } catch (err) {
+    console.error("Error eliminando QR:", err);
+    res.status(500).send("Error eliminando QR");
+  }
+});
+
+// ✅ Cambiar contraseña
+app.get("/change-password", (req, res) => {
+  if (!req.session.userId) return res.redirect("/login");
+  res.render("change-password", { darkMode: res.locals.darkMode, error: null });
+});
+
+app.post("/change-password", async (req, res) => {
+  if (!req.session.userId) return res.redirect("/login");
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.session.userId);
+
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) return res.render("change-password", { darkMode: res.locals.darkMode, error: "Contraseña actual incorrecta" });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    res.redirect("/dashboard");
+  } catch (err) {
+    console.error("Error cambiando contraseña:", err);
+    res.status(500).send("Error cambiando contraseña");
+  }
+});
+
+// ✅ Eliminar cuenta
+app.post("/delete-account", async (req, res) => {
+  if (!req.session.userId) return res.redirect("/login");
+  try {
+    await QR.deleteMany({ owner: req.session.userId });
+    await User.findByIdAndDelete(req.session.userId);
+    req.session.destroy(() => res.redirect("/"));
+  } catch (err) {
+    console.error("Error eliminando cuenta:", err);
+    res.status(500).send("Error eliminando cuenta");
+  }
+});
+
 // fallback
 app.use((req, res) => res.status(404).send("Ruta no encontrada"));
 
-// Start server
 app.listen(PORT, () => console.log(`✅ Servidor en http://localhost:${PORT}`));
+
