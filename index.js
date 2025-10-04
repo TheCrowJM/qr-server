@@ -21,18 +21,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.set("trust proxy", 1); // necesario para Vercel y cookies seguras detrás de proxy
+app.set("trust proxy", 1);
 
 const PORT = process.env.PORT || 3000;
+const BASE_URL = process.env.BASE_URL || "https://qrmanagerpro.vercel.app"; // 👈 URL fija para los QR
 
-// --- Express / view config
+// --- Express config
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cookieParser());
 
-// --- Session
+// --- Session config (auto-expira en 1 minuto)
 const sessSecret = process.env.SESSION_SECRET || "cambiame_localmente";
 const mongoURI = process.env.MONGODB_URI;
 
@@ -43,10 +44,11 @@ app.use(
     saveUninitialized: false,
     store: mongoURI ? MongoStore.create({ mongoUrl: mongoURI }) : undefined,
     cookie: { 
-      maxAge: 1000 * 60 * 30, // 1 día
+      maxAge: 1000 * 60 * 1, // 🕐 1 minuto
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax"
     },
+    rolling: true // 🔁 reinicia contador con cada interacción
   })
 );
 
@@ -56,7 +58,7 @@ if (!mongoURI) {
 } else {
   mongoose
     .connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log("Conectado a MongoDB"))
+    .then(() => console.log("✅ Conectado a MongoDB"))
     .catch((err) => console.error("❌ Error conectando a MongoDB:", err));
 }
 
@@ -67,9 +69,8 @@ app.use((req, res, next) => {
   // Persistencia de dark mode usando cookie
   let dark = req.cookies?.darkMode;
   if (dark === undefined) {
-    // preferencia del sistema si no hay cookie
     dark = req.headers['sec-ch-prefers-color-scheme'] === "dark";
-    res.cookie("darkMode", dark, { maxAge: 1000*60*60*24*365, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
+    res.cookie("darkMode", dark, { maxAge: 1000 * 60 * 60 * 24 * 365, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
   } else {
     dark = dark === "true";
   }
@@ -82,14 +83,13 @@ app.use((req, res, next) => {
 app.post("/toggle-darkmode", (req, res) => {
   const current = req.cookies?.darkMode === "true";
   const nextValue = !current;
-  res.cookie("darkMode", nextValue, { maxAge: 1000*60*60*24*365, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
-  req.session.darkMode = nextValue; // opcional
+  res.cookie("darkMode", nextValue, { maxAge: 1000 * 60 * 60 * 24 * 365, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
   res.redirect(req.headers.referer || "/");
 });
 
 // ---------------------- RUTAS -------------------------
 
-// Home / index
+// Home
 app.get("/", (req, res) => {
   if (req.session.userId) return res.redirect("/dashboard");
   res.render("index", { darkMode: res.locals.darkMode });
@@ -154,8 +154,7 @@ app.post("/register", async (req, res) => {
 
 // Logout
 app.get("/logout", (req, res) => {
-  req.session.destroy();
-  res.redirect("/");
+  req.session.destroy(() => res.redirect("/"));
 });
 
 // Dashboard
@@ -174,7 +173,7 @@ app.get("/dashboard", async (req, res) => {
   });
 });
 
-// ✅ Generate QR (create)
+// ✅ Generate QR con URL base fija
 app.post("/generate", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   try {
@@ -187,7 +186,7 @@ app.post("/generate", async (req, res) => {
     }
 
     const id = nanoid(12);
-    const internalUrl = `${req.protocol}://${req.get("host")}/qr/${id}`;
+    const internalUrl = `${BASE_URL}/qr/${id}`;
 
     let shortInternalUrl;
     try {
@@ -221,12 +220,26 @@ app.post("/generate", async (req, res) => {
   }
 });
 
-// Resto de rutas como update, delete, change-password, delete-account
-// ... se mantienen igual, solo usar res.locals.darkMode en lugar de req.session.darkMode
+// Redirección QR
+app.get("/qr/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const qr = await QR.findOne({ id });
+    if (!qr) return res.status(404).send("QR no encontrado");
+
+    qr.scans = (qr.scans || 0) + 1;
+    qr.lastScan = new Date();
+    await qr.save();
+
+    res.redirect(qr.originalUrl);
+  } catch (err) {
+    console.error("Error al redirigir QR:", err);
+    res.status(500).send("Error interno");
+  }
+});
 
 // fallback
 app.use((req, res) => res.status(404).send("Ruta no encontrada"));
 
 // Start server
 app.listen(PORT, () => console.log(`✅ Servidor en http://localhost:${PORT}`));
-
