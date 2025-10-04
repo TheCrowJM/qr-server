@@ -59,6 +59,7 @@ if (!mongoURI) {
     .catch((err) => console.error("❌ Error conectando a MongoDB:", err));
 }
 
+// ---------------------- MIDDLEWARE -------------------------
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.username || null;
 
@@ -82,7 +83,6 @@ app.post("/toggle-darkmode", (req, res) => {
 });
 
 // ---------------------- RUTAS -------------------------
-
 app.get("/", (req, res) => {
   if (req.session.userId) return res.redirect("/dashboard");
   res.render("index", { darkMode: res.locals.darkMode });
@@ -162,7 +162,9 @@ app.get("/dashboard", async (req, res) => {
   });
 });
 
-// ✅ Crear QR
+// ---------------------- QR -------------------------
+
+// ✅ Crear QR apuntando a shortInternalUrl de is.gd
 app.post("/generate", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   try {
@@ -177,16 +179,18 @@ app.post("/generate", async (req, res) => {
     const id = nanoid(12);
     const internalUrl = `${BASE_URL}/qr/${id}`;
 
+    // Acortar la URL interna con is.gd
     let shortInternalUrl;
     try {
       const r = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(internalUrl)}`);
-      shortInternalUrl = await r.text();
+      shortInternalUrl = (await r.text()).trim();
       if (!shortInternalUrl.startsWith("http")) shortInternalUrl = internalUrl;
     } catch (e) {
       console.error("is.gd error:", e);
       shortInternalUrl = internalUrl;
     }
 
+    // Generar QR apuntando al shortlink
     const qrDataUrl = await qrcode.toDataURL(shortInternalUrl);
 
     await QR.create({
@@ -262,7 +266,7 @@ app.post("/delete/:id", async (req, res) => {
   }
 });
 
-// ✅ Cambiar contraseña
+// ---------------------- CUENTA -------------------------
 app.get("/change-password", (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   res.render("change-password", { darkMode: res.locals.darkMode, error: null });
@@ -286,7 +290,6 @@ app.post("/change-password", async (req, res) => {
   }
 });
 
-// ✅ Eliminar cuenta
 app.post("/delete-account", async (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   try {
@@ -299,8 +302,7 @@ app.post("/delete-account", async (req, res) => {
   }
 });
 
-// fallback
+// ---------------------- FALLBACK -------------------------
 app.use((req, res) => res.status(404).send("Ruta no encontrada"));
 
 app.listen(PORT, () => console.log(`✅ Servidor en http://localhost:${PORT}`));
-

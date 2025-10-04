@@ -1,91 +1,95 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="<%= darkMode ? 'dark-mode' : '' %>">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Panel - QR Manager Pro</title>
-  <link rel="stylesheet" href="/css/style.css" />
-  <script defer src="/js/dark-mode.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - QR Manager</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
-<body class="<%= darkMode ? 'dark-mode' : '' %>">
+<body>
+  <!-- HEADER -->
   <div class="container">
-    <div class="card dashboard">
-
-      <!-- 🔝 Header con menú hamburguesa -->
+    <div class="card">
       <div class="header">
-        <div class="brand">QR Manager Pro</div>
-
-        <!-- Botón de dark mode siempre visible -->
-        <button class="btn small" data-toggle-dark>
-          <%= darkMode ? 'Light Mode' : 'Dark Mode' %>
-        </button>
-
-        <!-- Menú hamburguesa -->
-        <div class="menu-wrapper">
-          <button class="menu-btn" id="menu-toggle" aria-label="Abrir menú">
-            ☰
-          </button>
-          <div class="menu-dropdown" id="menu-dropdown">
-            <a href="/change-password">Cambiar contraseña</a>
-            <a href="/logout">Cerrar sesión</a>
-            <form action="/delete-account" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar tu cuenta? Esta acción no se puede deshacer.')">
-              <button type="submit" class="danger-link">Eliminar cuenta</button>
-            </form>
+        <div class="brand">QR Manager</div>
+        <div class="controls">
+          <!-- Menu hamburguesa -->
+          <div class="dropdown">
+            <button class="btn small">☰ Menu</button>
+            <div class="dropdown-content" style="display:none; position:absolute; right:0; top:40px; background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:10px; min-width:180px; z-index:999;">
+              <form action="/change-password" method="get">
+                <button type="submit" class="btn small" style="width:100%;">Cambiar contraseña</button>
+              </form>
+              <form action="/logout" method="get">
+                <button type="submit" class="btn small" style="width:100%;">Cerrar sesión</button>
+              </form>
+              <form action="/delete-account" method="post" onsubmit="return confirm('¿Estás seguro de eliminar tu cuenta?');">
+                <button type="submit" class="btn danger small" style="width:100%;">Eliminar cuenta</button>
+              </form>
+            </div>
           </div>
+          <!-- Dark mode -->
+          <form action="/toggle-darkmode" method="post" style="margin-left:10px;">
+            <button type="submit" class="btn small">🌙</button>
+          </form>
         </div>
       </div>
 
       <!-- Crear nuevo QR -->
-      <div class="create-qr">
-        <form action="/create" method="POST" style="display:flex; width:100%; gap:10px;">
-          <input type="url" name="originalUrl" placeholder="Ingresa la URL a acortar y generar QR" required />
-          <button class="btn" type="submit">Crear QR</button>
-        </form>
-      </div>
+      <form action="/generate" method="post" class="create-qr">
+        <input type="url" name="originalUrl" placeholder="Ingresa URL a convertir en QR" required>
+        <button type="submit" class="btn">Crear QR</button>
+      </form>
 
-      <!-- Lista de QRs -->
+      <!-- Grid de QRs -->
       <div class="qr-grid">
-        <% qrs.forEach(qr => { %>
-          <div class="qr-card">
-            <div class="qr-preview">
-              <img src="<%= qr.qrImageUrl %>" alt="QR Code" />
+        <% if (qrs.length === 0) { %>
+          <p class="note">No tienes QR creados aún.</p>
+        <% } else { %>
+          <% qrs.forEach(qr => { %>
+            <div class="qr-card">
+              <div class="qr-preview">
+                <img src="<%= qr.qrDataUrl %>" alt="QR">
+              </div>
+              <div class="qr-data">
+                <p><strong>Redirige a:</strong> <a href="<%= qr.originalUrl %>" target="_blank"><%= qr.originalUrl %></a></p>
+                <p><strong>URL acortada (fija):</strong> <a href="<%= qr.shortInternalUrl %>" target="_blank"><%= qr.shortInternalUrl %></a></p>
+                <p><strong>Escaneos:</strong> <%= qr.scans %> &nbsp; <strong>Último:</strong> <%= qr.lastScan ? qr.lastScan.toLocaleString() : 'Nunca' %></p>
+                
+                <form action="/update/<%= qr.id %>" method="post" class="inline-update">
+                  <input type="url" name="originalUrl" placeholder="Nueva URL" required>
+                  <button type="submit" class="btn small">Actualizar</button>
+                </form>
+                
+                <form action="/delete/<%= qr.id %>" method="post" style="margin-top:6px;" onsubmit="return confirm('¿Eliminar este QR?');">
+                  <button type="submit" class="btn danger small">Eliminar QR</button>
+                </form>
+              </div>
             </div>
-            <div class="qr-data">
-              <p><strong>Redirige a:</strong> <%= qr.originalUrl %></p>
-              <p><strong>URL acortada (fija):</strong> <%= qr.shortUrl %></p>
-              <p><strong>Escaneos:</strong> <%= qr.scans %> — <strong>Último:</strong> <%= qr.lastScan || 'Nunca' %></p>
-
-              <!-- Actualizar URL -->
-              <form class="inline-update" action="/update/<%= qr._id %>" method="POST">
-                <input type="url" name="newUrl" placeholder="Nueva URL (no cambiará el QR)" required />
-                <button class="btn small" type="submit">Actualizar</button>
-              </form>
-
-              <!-- Eliminar QR -->
-              <form class="inline-update" action="/delete/<%= qr._id %>" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar este QR?')">
-                <button class="btn small danger" type="submit">Eliminar QR</button>
-              </form>
-            </div>
-          </div>
-        <% }) %>
+          <% }) %>
+        <% } %>
       </div>
-
     </div>
   </div>
 
   <script>
-    // Toggle dropdown
-    const toggleBtn = document.getElementById("menu-toggle");
-    const dropdown = document.getElementById("menu-dropdown");
-    toggleBtn.addEventListener("click", () => {
-      dropdown.classList.toggle("show");
+    // Dropdown menu
+    document.querySelectorAll('.dropdown').forEach(drop => {
+      const btn = drop.querySelector('button');
+      const menu = drop.querySelector('.dropdown-content');
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+      });
     });
 
-    // Cierra el dropdown si se hace clic fuera
-    document.addEventListener("click", (e) => {
-      if (!toggleBtn.contains(e.target) && !dropdown.contains(e.target)) {
-        dropdown.classList.remove("show");
-      }
+    // Cerrar dropdown al hacer click afuera
+    window.addEventListener('click', (e) => {
+      document.querySelectorAll('.dropdown-content').forEach(menu => {
+        if (!menu.parentElement.contains(e.target)) {
+          menu.style.display = 'none';
+        }
+      });
     });
   </script>
 </body>
