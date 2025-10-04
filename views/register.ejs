@@ -24,12 +24,12 @@
       <% } %>
 
       <form action="/register" method="POST">
-        <label>Nombre</label>
-        <input type="text" name="name" required />
-        <label>Email</label>
-        <input type="email" name="email" required />
+        <label>Usuario</label>
+        <input type="text" name="username" required placeholder="usuario" />
         <label>Contraseña</label>
-        <input type="password" name="password" required />
+        <input type="password" name="password" required placeholder="contraseña" />
+        <label>Confirmar contraseña</label>
+        <input type="password" name="passwordConfirm" required placeholder="repite la contraseña" />
 
         <div class="form-buttons">
           <button class="btn" type="submit">Registrarse</button>
@@ -40,5 +40,19 @@
       <p class="note">¿Ya tienes cuenta? <a href="/login">Inicia sesión aquí</a></p>
     </div>
   </div>
+
+  <script>
+    const form = document.querySelector('form[action="/register"]');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        const p = form.querySelector('input[name="password"]').value;
+        const pc = form.querySelector('input[name="passwordConfirm"]').value;
+        if (p !== pc) {
+          e.preventDefault();
+          alert('Las contraseñas no coinciden');
+        }
+      });
+    }
+  </script>
 </body>
 </html>
