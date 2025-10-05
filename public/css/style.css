@@ -1,27 +1,29 @@
 :root{
-  --bg:#f5f8fc;
+  --bg:#e9f2fb;
   --card:#ffffff;
-  --accent:#2f66d3;
+  --accent:#2f66d3; /* azul principal */
   --accent-dark:#244fa8;
   --text:#17243b;
   --muted:#6b7280;
   --danger:#ff4d4f;
   --radius:12px;
-  --shadow: 0 8px 30px rgba(18,35,63,0.06);
+  --shadow: 0 8px 30px rgba(18,35,63,0.08);
+  --btn-elev: 0 6px 14px rgba(47,102,211,0.18);
 }
 
 /* Dark mode overrides */
 .dark-mode {
-  --bg:#071127;
-  --card:#071427;
+  --bg:#0f1724;
+  --card:#0b1220;
   --accent:#3b82f6;
   --accent-dark:#1e4ec8;
   --text:#e6eefb;
   --muted:#9aa8c6;
   --danger:#ff6b6b;
+  --btn-elev: 0 6px 14px rgba(59,130,246,0.12);
 }
 
-/* Basics */
+/* Base */
 * { box-sizing: border-box; }
 html,body { height:100%; }
 body{
@@ -29,13 +31,15 @@ body{
   margin:0;
   background:var(--bg);
   color:var(--text);
+  min-height:100vh;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  line-height:1.35;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Container for floating windows (index/login/register/change-password) */
+/* Container used on index/login/register/change-password so it stays centered */
 .container {
+  width:100%;
   max-width:980px;
   margin:32px auto;
   padding:20px;
@@ -44,16 +48,17 @@ body{
   align-items:center;
 }
 
-/* Floating card window */
+/* Card */
 .card {
   width:100%;
-  max-width:920px;
+  max-width:880px;
   background:var(--card);
-  border-radius:16px;
+  border-radius:18px;
   box-shadow:var(--shadow);
   padding:22px;
   margin:0 auto;
   position:relative;
+  overflow:hidden;
 }
 
 /* Header */
@@ -61,193 +66,181 @@ body{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  gap:12px;
   margin-bottom:14px;
+  gap:12px;
 }
-.brand { font-weight:700; font-size:1.15rem; color:var(--accent-dark); }
-.controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.brand { font-weight:700; font-size:1.25rem; color:var(--accent-dark); }
+.controls { display:flex; gap:10px; align-items:center; }
 
 /* Buttons */
 .btn {
   border:0;
-  padding:9px 12px;
+  padding:10px 14px;
   border-radius:10px;
   cursor:pointer;
   font-weight:600;
   background:var(--accent);
   color:white;
-  box-shadow: 0 6px 14px rgba(47,102,211,0.12);
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
+  box-shadow: var(--btn-elev);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
 }
-.btn.small { padding:7px 10px; font-size:0.9rem; border-radius:8px; }
-.btn.ghost { background: transparent; color:var(--accent); box-shadow:none; border:1px solid rgba(47,102,211,0.06); }
-.btn.danger { background:var(--danger); box-shadow: 0 6px 14px rgba(255,77,79,0.12); }
+.btn:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(16,36,96,0.12); }
+.btn:active { transform: translateY(-1px); }
+.btn.small { padding:8px 10px; font-size:0.9rem; border-radius:8px; }
 
-/* Links */
-.link { background:transparent; color:var(--accent); text-decoration:underline; padding:6px 8px; border-radius:8px; }
+/* Danger button (delete) */
+.btn.danger {
+  background:var(--danger);
+  box-shadow: 0 6px 14px rgba(255,77,79,0.12);
+}
 
-/* Inputs */
-input[type="url"], input[type="text"], input[type="password"], textarea {
-  width:100%;
-  padding:12px 14px;
-  border-radius:10px;
-  border:1px solid rgba(16,24,40,0.06);
+/* Link-like */
+.link {
   background:transparent;
+  color:var(--accent);
+  text-decoration:underline;
+  padding:6px 8px;
+  border-radius:8px;
+  font-weight:600;
+}
+
+/* Inputs — large, rounded, light gray in light mode, white in dark mode */
+input, textarea, select {
+  width:100%;
+  padding:14px 14px;
+  border-radius:12px;
+  border:1px solid rgba(16,24,40,0.06);
+  background: #f3f4f6;
   font-size:1rem;
   color:var(--text);
   margin-bottom:10px;
+  transition: box-shadow .12s ease, border-color .12s ease, background .12s ease;
+}
+.dark-mode input, .dark-mode textarea, .dark-mode select {
+  background: #ffffff;
+  color: #000;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 6px 18px rgba(47,102,211,0.12);
 }
 
-/* Slight gray fields in light mode, white in dark (readable) */
-body:not(.dark-mode) input, body:not(.dark-mode) textarea { background:#f3f4f6; color:var(--text); }
-.dark-mode input, .dark-mode textarea { background:#ffffff; color:#0a0a0a; }
-
+/* Labels */
 label { font-size:0.9rem; color:var(--muted); display:block; margin-bottom:6px; }
 
-/* Dashboard layout wrapper */
-.page-wrap {
-  max-width:1100px;
-  margin:18px auto;
-  padding:18px;
-}
-
-/* Dashboard card adjustments */
-.dashboard-card { padding:18px 20px; }
-
-/* Top row (brand + actions) */
+/* Dashboard top */
 .dashboard-top {
   display:flex;
   justify-content:space-between;
   align-items:center;
   gap:12px;
-  margin-bottom:12px;
+  margin-bottom:14px;
 }
-.dashboard-info { display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
-.dashboard-actions { display:flex; gap:8px; align-items:center; }
 
-/* Create QR form */
+/* Dashboard actions -> hide on very small */
+.dashboard-actions { display:flex; gap:10px; align-items:center; }
+
+/* Mobile: hamburger button (positioned top-right) */
+.hamburger {
+  display:none;
+  background:transparent;
+  border:0;
+  font-size:1.35rem;
+  color:var(--accent-dark);
+  cursor:pointer;
+}
+@media (max-width:920px){
+  .hamburger { display:inline-flex; align-items:center; justify-content:center; }
+  .dashboard-actions { display:none; } /* we'll show menu via slide-in */
+}
+
+/* Slide-in side menu (for dashboard) */
+.side-menu {
+  position:fixed;
+  top:0;
+  right:-320px;
+  width:320px;
+  height:100%;
+  background:var(--card);
+  box-shadow: -8px 0 30px rgba(16,24,40,0.12);
+  transition: right .25s ease;
+  z-index:1200;
+  padding:20px;
+}
+.side-menu.open { right:0; }
+.side-menu .sm-title { font-weight:700; margin-bottom:10px; color:var(--accent-dark); }
+.side-menu .sm-list { display:flex; flex-direction:column; gap:8px; }
+
+/* Create QR input */
 .create-qr {
   display:flex;
   gap:10px;
   align-items:center;
-  margin-bottom:12px;
+  margin-bottom:16px;
 }
-.create-qr input { flex:1; min-width:0; }
+.create-qr input { flex:1; max-width:720px; }
 .create-qr button { min-width:140px; }
 
 /* QR grid / cards */
 .qr-grid {
   display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap:16px;
-  margin-top:10px;
 }
 .qr-card {
   background:var(--card);
-  border-radius:12px;
-  padding:12px;
+  border-radius:14px;
+  padding:14px;
   box-shadow: 0 6px 18px rgba(11,20,40,0.04);
   display:flex;
-  gap:14px;
+  gap:12px;
   align-items:flex-start;
-  position:relative;
-  overflow:hidden;
+  flex-direction:row;
 }
-
-/* Mobile: QR card stack */
-@media (max-width:720px){
-  .qr-card { flex-direction:column; align-items:center; text-align:center; }
-  .qr-preview img { width:160px; height:160px; }
-  .qr-data { width:100%; }
-  .create-qr { flex-direction:column; align-items:stretch; }
-  .create-qr button { width:100%; }
-}
-
-/* Preview */
 .qr-preview img {
   width:120px;
   height:120px;
   object-fit:contain;
-  border-radius:10px;
+  border-radius:8px;
   background:#fff;
   padding:6px;
   border:1px solid rgba(16,24,40,0.04);
 }
-
-/* Data area */
-.qr-data { flex:1; min-width:0; }
+.qr-data { flex:1; }
 .qr-data p { margin:6px 0; font-size:0.95rem; color:var(--muted); word-break:break-word; }
+.qr-actions { display:flex; gap:8px; margin-top:8px; align-items:center; }
 
-/* Inline update */
-.inline-update { display:flex; gap:8px; margin-top:8px; align-items:center; }
-.inline-update input { flex:1; padding:8px 10px; border-radius:8px; border:1px solid rgba(16,24,40,0.06); }
+/* Inline update form inside card */
+.inline-update { display:flex; gap:8px; margin-top:8px; align-items:center; width:100%; }
+.inline-update input { flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(16,24,40,0.06); }
 
-/* Buttons area inside card */
-.qr-actions { display:flex; gap:8px; margin-top:8px; justify-content:flex-end; }
-
-/* Card footer (small notes) */
+/* Small note */
 .note { font-size:0.85rem; color:var(--muted); margin-top:12px; }
 
-/* Hamburger menu - dashboard only */
-.hamburger {
-  display:inline-flex;
-  flex-direction:column;
-  gap:4px;
-  width:36px;
-  height:28px;
-  justify-content:center;
-  cursor:pointer;
-  padding:6px;
-  border-radius:8px;
-  background:transparent;
-  border:1px solid rgba(16,24,40,0.04);
-}
-.hamburger span {
-  display:block;
-  height:3px;
-  background:var(--text);
-  border-radius:3px;
-  transition:transform .2s ease;
-}
-.hamburger.dark span { background:var(--text); }
-
-/* Side menu */
-.side-menu {
-  position:fixed;
-  top:0;
-  left:-320px;
-  width:280px;
-  height:100%;
-  background:var(--card);
-  box-shadow: 8px 0 34px rgba(11,20,40,0.08);
-  padding:18px;
-  z-index:1200;
-  transition:left .26s ease;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-.side-menu.open { left:0; }
-.side-menu .sm-title { font-weight:700; color:var(--accent-dark); margin-bottom:6px; }
-.side-menu .sm-link { display:block; padding:10px; border-radius:8px; text-decoration:none; color:var(--text); border:1px solid rgba(16,24,40,0.03); background:transparent; }
-
-/* overlay when menu open */
-.side-overlay {
-  position:fixed;
-  inset:0;
-  background:rgba(3,6,12,0.35);
-  z-index:1100;
-  display:none;
-}
-.side-overlay.show { display:block; }
-
-/* Helper small responsive tweaks */
-@media (max-width:480px){
+/* Responsive behaviors */
+@media (max-width:720px){
   .container { padding:16px; margin:16px auto; }
   .card { padding:16px; border-radius:12px; }
-  .brand { font-size:1.05rem; }
-  .hamburger { width:34px; height:26px; }
-  .qr-preview img { width:140px; height:140px; }
+  .qr-card { flex-direction:column; align-items:center; text-align:center; }
+  .qr-preview img { width:160px; height:160px; }
+  .inline-update { flex-direction:column; align-items:stretch; }
+  .inline-update button { width:100%; }
+  .create-qr { flex-direction:column; align-items:stretch; }
+  .create-qr button { width:100%; }
+  .dashboard-top { flex-direction:column; align-items:stretch; gap:12px; }
 }
+
+/* Ensure action buttons inside cards do not overlap */
+.qr-card .qr-actions form { margin:0; }
+
+/* Links style (interactive) */
+a { color:var(--accent); text-decoration:none; font-weight:600; }
+a:hover { text-decoration:underline; }
+
+/* Index layout tweaks: dark-mode button right-top, login/register centered below */
+.index-hero { text-align:center; padding:36px 10px; }
+.index-hero .cta-row { margin-top:18px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+/* subtle transitions */
+* { transition: background .12s ease, color .12s ease; }
