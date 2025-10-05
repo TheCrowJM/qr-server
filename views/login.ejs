@@ -1,26 +1,45 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Iniciar Sesión</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Iniciar sesión - QR Manager Pro</title>
   <link rel="stylesheet" href="/css/style.css" />
+  <script defer src="/js/dark-mode.js"></script>
 </head>
-<body class="<%= darkMode ? 'dark' : '' %>">
-  <div class="floating-window">
-    <h1>Iniciar Sesión</h1>
+<body class="<%= darkMode ? 'dark-mode' : '' %>">
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div class="brand">QR Manager Pro</div>
+        <div class="controls">
+          <button class="btn small" data-toggle-dark aria-label="Toggle theme"><%= darkMode ? 'Light Mode' : 'Dark Mode' %></button>
+        </div>
+      </div>
 
-    <% if (error) { %>
-      <p class="error"><%= error %></p>
-    <% } %>
+      <h1 style="margin-top:6px">Login</h1>
+      <% if (typeof error !== 'undefined' && error) { %>
+        <p style="color:var(--danger)"><%= error %></p>
+      <% } %>
 
-    <form method="POST" action="/login">
-      <input type="text" name="username" placeholder="Usuario" required class="input-large" />
-      <input type="password" name="password" placeholder="Contraseña" required class="input-large" />
-      <button type="submit" class="btn-primary">Entrar</button>
-    </form>
+      <form action="/login" method="POST" style="margin-top:8px;">
+        <label>Usuario</label>
+        <input name="username" required placeholder="usuario" autocomplete="username" />
 
-    <a href="/register" class="text-link">¿No tienes cuenta? Regístrate</a>
+        <label>Contraseña</label>
+        <input name="password" type="password" required placeholder="contraseña" autocomplete="current-password" />
+
+        <div style="display:flex; gap:8px; margin-top:12px; justify-content:center;">
+          <button class="btn" type="submit">Iniciar sesión</button>
+        </div>
+
+        <p style="margin-top:14px; text-align:center;" class="note">
+          ¿No tienes cuenta?
+          <a href="/register">Regístrate</a>
+        </p>
+
+      </form>
+    </div>
   </div>
 </body>
 </html>
