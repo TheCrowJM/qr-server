@@ -1,246 +1,186 @@
-:root{
-  --bg:#e9f2fb;
-  --card:#ffffff;
-  --accent:#2f66d3; /* azul principal */
-  --accent-dark:#244fa8;
-  --text:#17243b;
-  --muted:#6b7280;
-  --danger:#ff4d4f;
-  --radius:12px;
-  --shadow: 0 8px 30px rgba(18,35,63,0.08);
-  --btn-elev: 0 6px 14px rgba(47,102,211,0.18);
+/* ===== Variables ===== */
+:root {
+  --blue: #007bff;
+  --blue-hover: #0069d9;
+  --red: #dc3545;
+  --red-hover: #c82333;
+  --gray-light: #f1f1f1;
+  --dark-bg: #1e1e1e;
+  --dark-text: #eaeaea;
+  --transition: all 0.3s ease;
 }
 
-/* Dark mode overrides */
-.dark-mode {
-  --bg:#0f1724;
-  --card:#0b1220;
-  --accent:#3b82f6;
-  --accent-dark:#1e4ec8;
-  --text:#e6eefb;
-  --muted:#9aa8c6;
-  --danger:#ff6b6b;
-  --btn-elev: 0 6px 14px rgba(59,130,246,0.12);
-}
-
-/* Base */
-* { box-sizing: border-box; }
-html,body { height:100%; }
-body{
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Container used on index/login/register/change-password so it stays centered */
-.container {
-  width:100%;
-  max-width:980px;
-  margin:32px auto;
-  padding:20px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
-
-/* Card */
-.card {
-  width:100%;
-  max-width:880px;
-  background:var(--card);
-  border-radius:18px;
-  box-shadow:var(--shadow);
-  padding:22px;
-  margin:0 auto;
-  position:relative;
-  overflow:hidden;
-}
-
-/* Header */
-.header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:14px;
-  gap:12px;
-}
-.brand { font-weight:700; font-size:1.25rem; color:var(--accent-dark); }
-.controls { display:flex; gap:10px; align-items:center; }
-
-/* Buttons */
-.btn {
-  border:0;
-  padding:10px 14px;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:600;
-  background:var(--accent);
-  color:white;
-  box-shadow: var(--btn-elev);
-  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
-}
-.btn:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(16,36,96,0.12); }
-.btn:active { transform: translateY(-1px); }
-.btn.small { padding:8px 10px; font-size:0.9rem; border-radius:8px; }
-
-/* Danger button (delete) */
-.btn.danger {
-  background:var(--danger);
-  box-shadow: 0 6px 14px rgba(255,77,79,0.12);
-}
-
-/* Link-like */
-.link {
-  background:transparent;
-  color:var(--accent);
-  text-decoration:underline;
-  padding:6px 8px;
-  border-radius:8px;
-  font-weight:600;
-}
-
-/* Inputs — large, rounded, light gray in light mode, white in dark mode */
-input, textarea, select {
-  width:100%;
-  padding:14px 14px;
-  border-radius:12px;
-  border:1px solid rgba(16,24,40,0.06);
-  background: #f3f4f6;
-  font-size:1rem;
-  color:var(--text);
-  margin-bottom:10px;
-  transition: box-shadow .12s ease, border-color .12s ease, background .12s ease;
-}
-.dark-mode input, .dark-mode textarea, .dark-mode select {
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
   background: #ffffff;
-  color: #000;
-}
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 6px 18px rgba(47,102,211,0.12);
+  color: #222;
+  transition: var(--transition);
 }
 
-/* Labels */
-label { font-size:0.9rem; color:var(--muted); display:block; margin-bottom:6px; }
-
-/* Dashboard top */
-.dashboard-top {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  margin-bottom:14px;
+body.dark {
+  background: var(--dark-bg);
+  color: var(--dark-text);
 }
 
-/* Dashboard actions -> hide on very small */
-.dashboard-actions { display:flex; gap:10px; align-items:center; }
-
-/* Mobile: hamburger button (positioned top-right) */
-.hamburger {
-  display:none;
-  background:transparent;
-  border:0;
-  font-size:1.35rem;
-  color:var(--accent-dark);
-  cursor:pointer;
-}
-@media (max-width:920px){
-  .hamburger { display:inline-flex; align-items:center; justify-content:center; }
-  .dashboard-actions { display:none; } /* we'll show menu via slide-in */
+/* ===== HEADER ===== */
+.dashboard-header {
+  position: relative;
+  padding: 1.5rem;
+  background: var(--blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-/* Slide-in side menu (for dashboard) */
-.side-menu {
-  position:fixed;
-  top:0;
-  right:-320px;
-  width:320px;
-  height:100%;
-  background:var(--card);
-  box-shadow: -8px 0 30px rgba(16,24,40,0.12);
-  transition: right .25s ease;
-  z-index:1200;
-  padding:20px;
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
 }
-.side-menu.open { right:0; }
-.side-menu .sm-title { font-weight:700; margin-bottom:10px; color:var(--accent-dark); }
-.side-menu .sm-list { display:flex; flex-direction:column; gap:8px; }
 
-/* Create QR input */
-.create-qr {
-  display:flex;
-  gap:10px;
-  align-items:center;
-  margin-bottom:16px;
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
-.create-qr input { flex:1; max-width:720px; }
-.create-qr button { min-width:140px; }
 
-/* QR grid / cards */
+.menu .user {
+  font-weight: bold;
+}
+
+.inline-form {
+  display: inline;
+}
+
+/* ===== Dark Mode Button arriba derecha ===== */
+.dark-toggle-form.top-right {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.5rem;
+}
+
+.dark-toggle-btn {
+  background: var(--gray-light);
+  color: #333;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: var(--transition);
+}
+
+.dark-toggle-btn:hover {
+  background: var(--blue);
+  color: #fff;
+}
+
+/* ===== Botones ===== */
+button,
+.blue-btn {
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  padding: 0.7rem 1.3rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+button:hover,
+.blue-btn:hover {
+  background: var(--blue-hover);
+}
+
+.delete-btn,
+.delete-account-btn {
+  background: var(--red);
+}
+
+.delete-btn:hover,
+.delete-account-btn:hover {
+  background: var(--red-hover);
+}
+
+/* ===== Main ===== */
+.dashboard-main {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.generate-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.generate-form input {
+  width: 70%;
+  padding: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid #ccc;
+  margin-right: 0.5rem;
+  font-size: 1rem;
+}
+
+/* ===== QR Cards ===== */
 .qr-grid {
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap:16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
 }
+
 .qr-card {
-  background:var(--card);
-  border-radius:14px;
-  padding:14px;
-  box-shadow: 0 6px 18px rgba(11,20,40,0.04);
-  display:flex;
-  gap:12px;
-  align-items:flex-start;
-  flex-direction:row;
-}
-.qr-preview img {
-  width:120px;
-  height:120px;
-  object-fit:contain;
-  border-radius:8px;
-  background:#fff;
-  padding:6px;
-  border:1px solid rgba(16,24,40,0.04);
-}
-.qr-data { flex:1; }
-.qr-data p { margin:6px 0; font-size:0.95rem; color:var(--muted); word-break:break-word; }
-.qr-actions { display:flex; gap:8px; margin-top:8px; align-items:center; }
-
-/* Inline update form inside card */
-.inline-update { display:flex; gap:8px; margin-top:8px; align-items:center; width:100%; }
-.inline-update input { flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(16,24,40,0.06); }
-
-/* Small note */
-.note { font-size:0.85rem; color:var(--muted); margin-top:12px; }
-
-/* Responsive behaviors */
-@media (max-width:720px){
-  .container { padding:16px; margin:16px auto; }
-  .card { padding:16px; border-radius:12px; }
-  .qr-card { flex-direction:column; align-items:center; text-align:center; }
-  .qr-preview img { width:160px; height:160px; }
-  .inline-update { flex-direction:column; align-items:stretch; }
-  .inline-update button { width:100%; }
-  .create-qr { flex-direction:column; align-items:stretch; }
-  .create-qr button { width:100%; }
-  .dashboard-top { flex-direction:column; align-items:stretch; gap:12px; }
+  background: var(--gray-light);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transition: var(--transition);
 }
 
-/* Ensure action buttons inside cards do not overlap */
-.qr-card .qr-actions form { margin:0; }
+body.dark .qr-card {
+  background: #2a2a2a;
+}
 
-/* Links style (interactive) */
-a { color:var(--accent); text-decoration:none; font-weight:600; }
-a:hover { text-decoration:underline; }
+.qr-card:hover {
+  transform: translateY(-5px);
+}
 
-/* Index layout tweaks: dark-mode button right-top, login/register centered below */
-.index-hero { text-align:center; padding:36px 10px; }
-.index-hero .cta-row { margin-top:18px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+.qr-image {
+  width: 150px;
+  margin-bottom: 1rem;
+}
 
-/* subtle transitions */
-* { transition: background .12s ease, color .12s ease; }
+.qr-info p {
+  margin: 0.4rem 0;
+  font-size: 0.95rem;
+}
+
+.qr-info a {
+  color: var(--blue);
+  text-decoration: none;
+}
+
+.qr-info a:hover {
+  text-decoration: underline;
+}
+
+/* ===== Update & Delete Forms ===== */
+.update-form input {
+  width: 100%;
+  padding: 0.7rem;
+  border-radius: 999px;
+  border: 1px solid #ccc;
+  margin-bottom: 0.8rem;
+}
+
+.empty {
+  text-align: center;
+  font-size: 1.1rem;
+  opacity: 0.7;
+}
