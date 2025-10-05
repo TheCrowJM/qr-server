@@ -1,70 +1,56 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard - Gestor de QRs</title>
-  <link rel="stylesheet" href="/css/style.css" />
-  <script defer src="/js/dark-mode.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel</title>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-  <header class="dashboard-header">
-    <div class="logo">Gestor de QRs</div>
+<body class="<%= darkMode ? 'dark' : '' %>">
 
-    <!-- Botón Dark Mode fuera del menú -->
-    <button id="dark-mode-toggle" class="dark-mode-btn">🌙</button>
+<header class="header">
+  <form action="/toggle-darkmode" method="POST" class="dark-toggle-form">
+    <button type="submit" class="dark-toggle-btn">🌙</button>
+  </form>
+</header>
 
-    <div class="menu-container">
-      <input type="checkbox" id="menu-toggle" />
-      <label for="menu-toggle" class="menu-btn">
-        <span></span><span></span><span></span>
-      </label>
-      <nav class="menu">
-        <a href="/change-password">Cambiar Contraseña</a>
-        <form action="/delete-account" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar tu cuenta? Esta acción no se puede deshacer.')">
-          <button type="submit" class="btn-delete-account">Eliminar Cuenta</button>
+<main class="dashboard-container">
+  <h1>Hola, <%= currentUser %> 👋</h1>
+
+  <form action="/generate" method="POST" class="generate-form">
+    <input type="text" name="originalUrl" placeholder="Introduce la URL" required class="input-large" />
+    <button type="submit" class="btn btn-primary">Generar QR</button>
+  </form>
+
+  <div class="qr-list">
+    <% qrs.forEach(qr => { %>
+      <div class="qr-card">
+        <img src="<%= qr.qrDataUrl %>" alt="QR">
+        <p><strong>URL destino:</strong> <%= qr.originalUrl %></p>
+        <p><strong>URL acortada:</strong> <%= qr.shortInternalUrl %></p>
+        <p><strong>Último escaneo:</strong> <%= qr.lastScan ? qr.lastScan.toLocaleString("es-VE", { timeZone: "America/Caracas" }) : "Nunca" %></p>
+        <p><strong>Escaneos:</strong> <%= qr.scans %></p>
+
+        <form action="/update/<%= qr.id %>" method="POST" class="update-form">
+          <input type="text" name="originalUrl" placeholder="Nueva URL" required class="input-large" />
+          <button type="submit" class="btn btn-primary">Actualizar</button>
         </form>
-        <a href="/logout" class="logout">Cerrar Sesión</a>
-      </nav>
-    </div>
-  </header>
 
-  <main class="dashboard-container">
-    <section class="qr-generator">
-      <h2>Generar nuevo QR</h2>
-      <form action="/generate-qr" method="POST" class="qr-form">
-        <input type="url" name="originalUrl" placeholder="Introduce la URL original" required />
-        <button type="submit" class="btn">Generar QR</button>
-      </form>
-    </section>
-
-    <section class="qr-list">
-      <h2>Mis QRs</h2>
-      <div class="qr-grid">
-        <% if (qrs.length === 0) { %>
-          <p class="no-qr">Aún no has generado ningún código QR.</p>
-        <% } else { %>
-          <% qrs.forEach(qr => { %>
-            <div class="qr-card">
-              <img src="<%= qr.qrDataUrl %>" alt="QR Code" class="qr-image" />
-              <div class="qr-info">
-                <p><strong>URL destino:</strong> <a href="<%= qr.originalUrl %>" target="_blank"><%= qr.originalUrl %></a></p>
-                <p><strong>URL intermedia:</strong> <a href="<%= qr.shortInternalUrl %>" target="_blank"><%= qr.shortInternalUrl %></a></p>
-                <p><strong>Último escaneo:</strong> <%= qr.lastScan ? new Date(qr.lastScan).toLocaleString('es-VE', { timeZone: 'America/Caracas', day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Nunca' %></p>
-                <p><strong>Escaneos totales:</strong> <%= qr.scans %></p>
-              </div>
-              <form action="/update-qr/<%= qr.id %>" method="POST" class="update-form">
-                <input type="url" name="newUrl" placeholder="Nueva URL de destino" required />
-                <button type="submit" class="btn">Actualizar</button>
-              </form>
-              <form action="/delete-qr/<%= qr.id %>" method="POST" onsubmit="return confirm('¿Eliminar este QR?')" class="delete-form">
-                <button type="submit" class="btn-delete">Eliminar QR</button>
-              </form>
-            </div>
-          <% }) %>
-        <% } %>
+        <form action="/delete/<%= qr.id %>" method="POST" class="delete-form">
+          <button type="submit" class="btn btn-danger">Eliminar QR</button>
+        </form>
       </div>
-    </section>
-  </main>
+    <% }) %>
+  </div>
+
+  <div class="bottom-links">
+    <a href="/change-password" class="link">Cambiar contraseña</a>
+    <form action="/delete-account" method="POST" onsubmit="return confirm('¿Eliminar cuenta y todos los QR?')">
+      <button type="submit" class="btn btn-danger">Eliminar cuenta</button>
+    </form>
+    <a href="/logout" class="btn btn-primary">Cerrar sesión</a>
+  </div>
+</main>
+
 </body>
 </html>

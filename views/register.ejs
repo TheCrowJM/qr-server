@@ -1,62 +1,32 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Registrarte - QR Manager Pro</title>
-  <link rel="stylesheet" href="/css/style.css" />
-  <script defer src="/js/dark-mode.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrarse</title>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="<%= darkMode ? 'dark-mode' : '' %>">
-  <div class="container">
-    <div class="card">
-      <div class="header">
-        <div class="brand">QR Manager Pro</div>
-        <div class="controls">
-          <button class="btn small" data-toggle-dark aria-label="Toggle theme"><%= darkMode ? 'Light Mode' : 'Dark Mode' %></button>
-        </div>
-      </div>
+<body class="<%= darkMode ? 'dark' : '' %>">
 
-      <h1>Crear cuenta</h1>
-      <% if (typeof error !== 'undefined' && error) { %>
-        <p style="color:var(--danger)"><%= error %></p>
-      <% } %>
+<header class="header">
+  <form action="/toggle-darkmode" method="POST" class="dark-toggle-form">
+    <button type="submit" class="dark-toggle-btn">🌙</button>
+  </form>
+</header>
 
-      <form action="/register" method="POST" style="margin-top:8px;">
-        <label>Usuario</label>
-        <input name="username" required placeholder="usuario" autocomplete="username" />
+<main class="form-container">
+  <h1>Crear Cuenta</h1>
+  <% if (error) { %>
+    <p class="error"><%= error %></p>
+  <% } %>
+  <form action="/register" method="POST">
+    <input type="text" name="username" placeholder="Usuario" required class="input-large" />
+    <input type="password" name="password" placeholder="Contraseña" required class="input-large" />
+    <input type="password" name="passwordConfirm" placeholder="Confirmar contraseña" required class="input-large" />
+    <button type="submit" class="btn btn-primary">Registrar</button>
+  </form>
+  <a href="/login" class="link">¿Ya tienes cuenta? Inicia sesión</a>
+</main>
 
-        <label>Contraseña</label>
-        <input name="password" type="password" required placeholder="contraseña" autocomplete="new-password" />
-
-        <label>Confirmar contraseña</label>
-        <input name="passwordConfirm" type="password" required placeholder="repite la contraseña" autocomplete="new-password" />
-
-        <div style="display:flex; gap:8px; margin-top:12px; justify-content:center;">
-          <button class="btn" type="submit">Registrarte</button>
-        </div>
-
-        <p style="margin-top:14px; text-align:center;" class="note">
-          ¿Ya tienes cuenta?
-          <a href="/login">Iniciar sesión</a>
-        </p>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    // client-side confirm password (keeps existing server check)
-    const regForm = document.querySelector('form[action="/register"]');
-    if (regForm) {
-      regForm.addEventListener('submit', (e) => {
-        const p = regForm.querySelector('input[name="password"]').value;
-        const pc = regForm.querySelector('input[name="passwordConfirm"]').value;
-        if (p !== pc) {
-          e.preventDefault();
-          alert('Las contraseñas no coinciden');
-        }
-      });
-    }
-  </script>
 </body>
 </html>

@@ -1,238 +1,158 @@
-/* ======= RESET ======= */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+:root {
+  --bg: #f5f5f5;
+  --text: #222;
+  --primary: #007bff;
+  --danger: #dc3545;
+  --card: #ffffff;
+  --gray: #eaeaea;
+}
+
+.dark {
+  --bg: #1e1e1e;
+  --text: #f0f0f0;
+  --primary: #3399ff;
+  --card: #2b2b2b;
+  --gray: #444;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  transition: background 0.3s, color 0.3s;
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-:root {
-  --bg: #f5f5f5;
-  --card-bg: #ffffff;
-  --text: #333;
-  --primary: #007bff;
-  --danger: #e53935;
-  --light-gray: #f0f0f0;
-}
-
-body.dark {
-  --bg: #1e1e1e;
-  --card-bg: #2c2c2c;
-  --text: #f5f5f5;
-  --primary: #3498db;
-  --danger: #ff5555;
-  --light-gray: #3a3a3a;
-}
-
-/* ======= HEADER ======= */
-.dashboard-header {
-  width: 100%;
-  background: var(--card-bg);
-  padding: 1rem 2rem;
+.header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  position: relative;
+  justify-content: flex-end;
+  padding: 1rem;
 }
 
-.logo {
-  font-size: 1.5rem;
-  font-weight: bold;
+.dark-toggle-form {
+  margin: 0;
 }
 
-/* ======= DARK MODE BUTTON (ESQUINA DERECHA) ======= */
-.dark-mode-btn {
-  position: absolute;
-  top: 1rem;
-  right: 1.5rem;
-  background: var(--primary);
-  color: #fff;
+.dark-toggle-btn {
+  background: var(--gray);
   border: none;
+  padding: 0.6rem 1rem;
   border-radius: 50%;
-  width: 42px;
-  height: 42px;
   font-size: 1.2rem;
   cursor: pointer;
-  transition: transform 0.2s, background 0.3s;
+  transition: 0.3s;
 }
-
-.dark-mode-btn:hover {
+.dark-toggle-btn:hover {
   transform: scale(1.1);
-  background: #0056b3;
 }
 
-/* ======= MENU ======= */
-.menu-container {
-  position: relative;
+.center-container {
+  text-align: center;
+  margin-top: 20vh;
 }
 
-.menu-btn {
+.main-buttons {
+  margin-top: 2rem;
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btn {
+  padding: 0.8rem 1.8rem;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
   cursor: pointer;
-  gap: 4px;
-}
-
-.menu-btn span {
-  width: 25px;
-  height: 3px;
-  background: var(--text);
-  border-radius: 3px;
-}
-
-#menu-toggle {
-  display: none;
-}
-
-.menu {
-  display: none;
-  position: absolute;
-  top: 50px;
-  right: 0;
-  background: var(--card-bg);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-  padding: 1rem;
-  border-radius: 12px;
-}
-
-#menu-toggle:checked + .menu-btn + .menu {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-
-.menu a,
-.logout {
   text-decoration: none;
-  color: var(--text);
+  text-align: center;
+  transition: 0.3s;
 }
-
-.btn-delete-account {
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-danger {
   background: var(--danger);
   color: #fff;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.3s;
+}
+.btn:hover {
+  filter: brightness(1.1);
 }
 
-.btn-delete-account:hover {
-  background: #c62828;
+.input-large {
+  width: 100%;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  border: 1px solid var(--gray);
+  border-radius: 50px;
+  font-size: 1rem;
 }
 
-/* ======= MAIN ======= */
+.form-container {
+  max-width: 400px;
+  margin: 10vh auto;
+  padding: 2rem;
+  background: var(--card);
+  border-radius: 20px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.link {
+  color: var(--primary);
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 1rem;
+}
+
 .dashboard-container {
   max-width: 900px;
   margin: 2rem auto;
-  padding: 0 1rem;
+  padding: 1rem;
 }
 
-.qr-generator h2,
-.qr-list h2 {
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-.qr-form {
+.generate-form {
   display: flex;
-  gap: 0.5rem;
-  justify-content: center;
+  gap: 1rem;
   margin-bottom: 2rem;
 }
-
-.qr-form input {
+.generate-form input {
   flex: 1;
-  padding: 0.7rem;
-  border: 2px solid var(--primary);
-  border-radius: 12px;
-  outline: none;
 }
 
-/* ======= BUTTONS ======= */
-.btn {
-  background: var(--primary);
-  color: #fff;
-  padding: 0.7rem 1.5rem;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background 0.3s, transform 0.2s;
-}
-
-.btn:hover {
-  background: #0056b3;
-  transform: scale(1.05);
-}
-
-.btn-delete {
-  background: var(--danger);
-  color: #fff;
-  padding: 0.7rem 1.5rem;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background 0.3s, transform 0.2s;
-}
-
-.btn-delete:hover {
-  background: #c62828;
-  transform: scale(1.05);
-}
-
-/* ======= QR CARDS ======= */
-.qr-grid {
+.qr-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
 }
 
 .qr-card {
-  background: var(--card-bg);
+  background: var(--card);
   padding: 1.5rem;
   border-radius: 20px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
   text-align: center;
 }
 
-.qr-card p {
-  margin: 0.4rem 0;
-  word-wrap: break-word;
-}
-
-.qr-image {
-  width: 160px;
-  height: 160px;
+.qr-card img {
+  max-width: 150px;
   margin-bottom: 1rem;
 }
 
-.update-form input {
-  width: 100%;
-  padding: 0.6rem;
-  margin-bottom: 0.5rem;
-  border-radius: 12px;
-  border: 2px solid var(--primary);
+.update-form, .delete-form {
+  margin-top: 1rem;
 }
 
-.no-qr {
-  text-align: center;
-  font-size: 1.1rem;
-  color: #888;
+.bottom-links {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
 }
 
-/* ======= RESPONSIVE ======= */
-@media (max-width: 600px) {
-  .qr-form {
-    flex-direction: column;
-  }
-  .qr-form input {
-    width: 100%;
-  }
+.error {
+  color: var(--danger);
 }
