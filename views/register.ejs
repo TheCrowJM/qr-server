@@ -1,61 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Registrarte - QR Manager Pro</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registro</title>
   <link rel="stylesheet" href="/css/style.css" />
-  <script defer src="/js/dark-mode.js"></script>
 </head>
-<body class="<%= darkMode ? 'dark-mode' : '' %>">
-  <div class="floating-wrap">
-    <div class="card">
-      <div class="header">
-        <div class="brand">QR Manager Pro</div>
-        <div class="controls" style="margin-left:auto;">
-          <form action="/toggle-darkmode" method="POST" style="margin:0;">
-            <button class="btn small" type="submit"><%= darkMode ? 'Light Mode' : 'Dark Mode' %></button>
-          </form>
-        </div>
-      </div>
+<body class="<%= darkMode ? 'dark' : '' %>">
+  <div class="floating-window">
+    <h1>Crear Cuenta</h1>
 
-      <h1>Crear cuenta</h1>
-      <% if (typeof error !== 'undefined' && error) { %>
-        <p style="color:var(--danger)"><%= error %></p>
-      <% } %>
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
 
-      <form action="/register" method="POST" style="margin-top:8px;">
-        <label>Usuario</label>
-        <input name="username" required placeholder="usuario" />
+    <form method="POST" action="/register">
+      <input type="text" name="username" placeholder="Usuario" required class="input-large" />
+      <input type="password" name="password" placeholder="Contraseña" required class="input-large" />
+      <input type="password" name="passwordConfirm" placeholder="Confirmar Contraseña" required class="input-large" />
+      <button type="submit" class="btn-primary">Registrar</button>
+    </form>
 
-        <label>Contraseña</label>
-        <input name="password" type="password" required placeholder="contraseña" />
-
-        <label>Confirmar contraseña</label>
-        <input name="passwordConfirm" type="password" required placeholder="repite la contraseña" />
-
-        <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
-          <button class="btn" type="submit">Registrarte</button>
-          <a href="/" class="link" style="align-self:center">Volver</a>
-          <span style="margin-left:auto" class="note">¿Ya tienes cuenta? <a href="/login" class="link" style="color:var(--accent)">Iniciar sesión</a></span>
-        </div>
-      </form>
-    </div>
+    <a href="/login" class="text-link">¿Ya tienes cuenta? Inicia sesión</a>
   </div>
-
-  <script>
-    // Verificación simple de contraseñas en cliente
-    const form = document.querySelector('form[action="/register"]');
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        const p = form.querySelector('input[name="password"]').value;
-        const pc = form.querySelector('input[name="passwordConfirm"]').value;
-        if (p !== pc) {
-          e.preventDefault();
-          alert('Las contraseñas no coinciden');
-        }
-      });
-    }
-  </script>
 </body>
 </html>
