@@ -1,24 +1,34 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>QR Manager Pro</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/style.css" />
+  <script defer src="/js/dark-mode.js"></script>
 </head>
-<body class="<%= darkMode ? 'dark' : '' %>">
-  <header class="header">
-    <form action="/toggle-darkmode" method="POST" class="dark-toggle-form">
-      <button type="submit" class="dark-toggle-btn">🌙</button>
-    </form>
-  </header>
+<body class="<%= darkMode ? 'dark-mode' : '' %>">
+  <div class="floating-wrap">
+    <div class="card">
+      <div class="header">
+        <div class="brand">QR Manager Pro</div>
+        <div class="controls" style="margin-left:auto;">
+          <form action="/toggle-darkmode" method="POST" style="margin:0;">
+            <button class="btn small" type="submit"><%= darkMode ? 'Light Mode' : 'Dark Mode' %></button>
+          </form>
+        </div>
+      </div>
 
-  <main class="center-container">
-    <h1 class="main-title">QR Manager Pro</h1>
-    <div class="main-buttons">
-      <a href="/login" class="btn btn-primary">Iniciar Sesión</a>
-      <a href="/register" class="btn btn-primary">Registrarse</a>
+      <div style="text-align:center; padding:32px 10px;">
+        <h2 style="margin:0 0 8px;">Organiza tus QR dinámicos</h2>
+        <p class="small-note">Inicia sesión o regístrate para empezar a crear códigos QR que puedas actualizar sin cambiar su imagen.</p>
+
+        <div style="display:flex; gap:12px; justify-content:center; margin-top:22px; flex-wrap:wrap;">
+          <a class="btn" href="/login">Iniciar sesión</a>
+          <a class="btn" href="/register" style="background:var(--accent-dark)">Registrarte</a>
+        </div>
+      </div>
     </div>
-  </main>
+  </div>
 </body>
 </html>
